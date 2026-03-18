@@ -27,3 +27,6 @@ print("Random color:", random.choice(colors))
 # Another loop
 for j in range(3):
     print("Iteration", j+1, ":", random.uniform(0, 1))
+
+print("Random number between 1 and 10:", random.uniform(1, 10))
+print("we are checking")
