@@ -30,3 +30,5 @@ for j in range(3):
 
 print("Random number between 1 and 10:", random.uniform(1, 10))
 print("we are checking")
+
+print("github bhi na bhaiya chij hai")
