@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Market Pulse | Financial Intelligence",
+  title: "The Monitor | Financial Intelligence",
   description: "Real-time market impact analysis and OSINT financial dashboard",
 };
 
@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-info rounded flex items-center justify-center font-bold text-white">M</div>
               <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                MARKET PULSE
+                THE MONITOR
               </span>
             </div>
             
