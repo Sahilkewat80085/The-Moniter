@@ -99,7 +99,8 @@ body {
 }
 
 .ticker-scroll {
-  animation: ticker-scroll 60s linear infinite;
+  animation: ticker-scroll 40s linear infinite;
+  width: max-content;
 }
 
 .ticker-scroll.paused {

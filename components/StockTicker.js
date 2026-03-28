@@ -76,8 +76,20 @@ export default function StockTicker() {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
+      <style>{`
+        @keyframes ticker-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .ticker-animate {
+          animation: ticker-scroll 40s linear infinite;
+        }
+        .ticker-animate.paused {
+          animation-play-state: paused;
+        }
+      `}</style>
       <div
-        className={`ticker-scroll flex items-center h-full whitespace-nowrap ${isPaused ? "paused" : ""}`}
+        className={`ticker-animate flex items-center h-full whitespace-nowrap ${isPaused ? 'paused' : ''}`}
         style={{ width: "fit-content" }}
       >
         {[...tickerData, ...tickerData].map((item, index) => (
