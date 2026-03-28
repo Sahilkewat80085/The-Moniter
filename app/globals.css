@@ -87,3 +87,21 @@ body {
   animation: scanline 4s linear infinite;
   pointer-events: none;
 }
+
+/* Stock Ticker Animation */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-scroll {
+  animation: ticker-scroll 60s linear infinite;
+}
+
+.ticker-scroll.paused {
+  animation-play-state: paused;
+}
