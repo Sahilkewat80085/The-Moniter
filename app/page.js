@@ -8,10 +8,28 @@ import MarketTicker from "../components/MarketTicker";
 import MapView from "../components/MapView";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
+function getIndiaTime() {
+  const now = new Date();
+  const indiaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const hours = indiaTime.getHours().toString().padStart(2, "0");
+  const minutes = indiaTime.getMinutes().toString().padStart(2, "0");
+  const seconds = indiaTime.getSeconds().toString().padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
+
 export default function Dashboard() {
   const events = useIntelligenceFeed();
   const [selectedEventId, setSelectedEventId] = useState(INITIAL_EVENTS[0].id);
   const [activeTab, setActiveTab] = useState("ALL");
+  const [syncTime, setSyncTime] = useState("");
+
+  useEffect(() => {
+    setSyncTime(getIndiaTime());
+    const interval = setInterval(() => {
+      setSyncTime(getIndiaTime());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const selectedEvent = events.find(e => e.id === selectedEventId) || events[0];
 
@@ -39,7 +57,7 @@ export default function Dashboard() {
         </div>
 
         <div className="p-4 border-t border-border bg-panel/50 text-[10px] text-slate-600 font-mono">
-          Last synchronization: {new Date().toLocaleTimeString()}
+          Last synchronization: {syncTime} IND
         </div>
       </section>
 

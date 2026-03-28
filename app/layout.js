@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
+import LiveClock from "../components/LiveClock";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,10 +35,7 @@ export default function RootLayout({ children }) {
             </div>
 
             <div className="flex items-center gap-6">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] text-slate-500 font-mono uppercase">Live UTC Time</span>
-                <span className="text-sm font-mono tracking-wider tabular-nums">22:23:33</span>
-              </div>
+              <LiveClock />
               <div className="w-8 h-8 rounded-full border border-border bg-slate-800 flex items-center justify-center cursor-pointer hover:border-info transition-colors">
                 <div className="w-4 h-4 rounded-full border-t-2 border-info"></div>
               </div>
