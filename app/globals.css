@@ -89,7 +89,33 @@ body {
 }
 
 /* Stock Ticker Animation */
-@keyframes ticker-scroll {
+.ticker-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: #0b0f14;
+  border-top: 1px solid #1f2a36;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.ticker-track {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  animation: tickerScroll 50s linear infinite;
+}
+
+.ticker-track:hover,
+.ticker-track.paused {
+  animation-play-state: paused;
+}
+
+@keyframes tickerScroll {
   0% {
     transform: translateX(0);
   }
@@ -98,11 +124,20 @@ body {
   }
 }
 
-.ticker-scroll {
-  animation: ticker-scroll 40s linear infinite;
-  width: max-content;
+.ticker-item {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 0.5rem;
+  white-space: nowrap;
 }
 
-.ticker-scroll.paused {
-  animation-play-state: paused;
+.ticker-item:hover {
+  background: rgba(31, 42, 54, 0.5);
+}
+
+.ticker-separator {
+  color: #1f2a36;
+  font-size: 0.75rem;
+  margin: 0 0.25rem;
 }
