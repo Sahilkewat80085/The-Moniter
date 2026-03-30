@@ -4,16 +4,22 @@ import React, { useState, useEffect, useRef } from "react";
 
 function formatPrice(price, symbol) {
   if (price === null || price === undefined) return "—";
-  if (symbol === "EURUSD=X" || (symbol.includes("-USD") && price < 10)) {
+
+  // Forex pairs show rate without $ sign
+  if (symbol === "EURUSD=X") {
     return price.toFixed(4);
   }
+  // Crypto under $10 show more precision
+  if (symbol.includes("-USD") && price < 10) {
+    return "$" + price.toFixed(4);
+  }
   if (price >= 1000) {
-    return price.toLocaleString("en-US", {
+    return "$" + price.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   }
-  return price.toFixed(2);
+  return "$" + price.toFixed(2);
 }
 
 async function fetchStockData() {
