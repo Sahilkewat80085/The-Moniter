@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 
-// GNews free tier: 100 req/day — https://gnews.io/register
-// Set GNEWS_API_KEY in .env.local
 const GNEWS_KEY = process.env.GNEWS_API_KEY;
 
 let cache = { data: null, timestamp: 0 };
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes – news doesn't need rapid polling
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export async function GET() {
   const now = Date.now();
@@ -14,8 +12,7 @@ export async function GET() {
     return NextResponse.json({ success: true, articles: cache.data, cached: true });
   }
 
-  if (!GNEWS_KEY) {
-    // Return helpful fallback so UI gracefully degrades
+  if (!GNEWS_KEY || GNEWS_KEY === "your_key_here") {
     return NextResponse.json({
       success: false,
       noKey: true,
@@ -24,14 +21,18 @@ export async function GET() {
     });
   }
 
-  const query = encodeURIComponent("stock market OR financial markets OR Fed OR economy");
-  const url = `https://gnews.io/api/v4/search?q=${query}&lang=en&country=us&max=10&sortby=publishedAt&token=${GNEWS_KEY}`;
+  // Simple single-word query avoids 400 encoding issues on free tier
+  const url = `https://gnews.io/api/v4/search?q=stocks&lang=en&country=us&max=10&sortby=publishedAt&token=${GNEWS_KEY}`;
 
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } });
+    const res = await fetch(url, {
+      headers: { "Accept": "application/json" },
+      next: { revalidate: 300 },
+    });
 
     if (!res.ok) {
-      throw new Error(`GNews responded with ${res.status}`);
+      const text = await res.text().catch(() => "");
+      throw new Error(`GNews ${res.status}: ${text.slice(0, 200)}`);
     }
 
     const json = await res.json();
@@ -42,22 +43,15 @@ export async function GET() {
       url: a.url,
       publishedAt: a.publishedAt,
       description: a.description,
-      image: a.image || null,
     }));
 
     cache = { data: articles, timestamp: now };
-
     return NextResponse.json({ success: true, articles });
   } catch (err) {
-    console.error("[/api/news] fetch error:", err.message);
-
+    console.error("[/api/news]", err.message);
     if (cache.data) {
       return NextResponse.json({ success: true, articles: cache.data, stale: true });
     }
-
-    return NextResponse.json(
-      { success: false, error: err.message, articles: [] },
-      { status: 502 }
-    );
+    return NextResponse.json({ success: false, error: err.message, articles: [] }, { status: 502 });
   }
 }

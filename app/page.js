@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { INITIAL_EVENTS, MARKET_TICKERS } from "../lib/mockData";
+import { INITIAL_EVENTS } from "../lib/mockData";
 import EventCard from "../components/EventCard";
 import ImpactCard from "../components/ImpactCard";
 import MarketTicker from "../components/MarketTicker";
+import NewsFeed from "../components/NewsFeed";
 import MapView from "../components/MapView";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
@@ -101,13 +102,9 @@ export default function Dashboard() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Global Markets</h2>
-              <span className="text-[9px] font-mono text-slate-600">SOURCE: REED_INTEL_V2</span>
+              <span className="text-[9px] font-mono text-positive tracking-widest">● LIVE</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {MARKET_TICKERS.map((ticker, idx) => (
-                <MarketTicker key={idx} ticker={ticker} />
-              ))}
-            </div>
+            <MarketTicker />
           </div>
 
           <div className="intelligence-panel p-6 rounded-xl border border-border/50 bg-background/30">
@@ -144,22 +141,11 @@ export default function Dashboard() {
           </div>
 
           <div>
-             <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6">Correlated Trending</h2>
-             <div className="flex flex-col gap-3">
-               {[1,2,3].map(i => (
-                 <div key={i} className="group cursor-pointer">
-                   <div className="flex justify-between items-center mb-1">
-                     <span className="text-[10px] font-mono text-slate-600 uppercase">Trend Group {i}</span>
-                     <span className="text-[9px] text-info font-bold">ALPHA: 0.84</span>
-                   </div>
-                   <div className="p-3 intelligence-card border border-border rounded-lg group-hover:border-info/30 transition-all">
-                     <p className="text-xs font-semibold text-slate-300 group-hover:text-white transition-colors">
-                       {i === 1 ? "OPEC+ Supply Adjustments Scenario" : i === 2 ? "Cross-Strait Semiconductor Logics" : "Central Bank Digital Currency Beta"}
-                     </p>
-                   </div>
-                 </div>
-               ))}
-             </div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Financial News</h2>
+              <span className="text-[9px] font-mono text-slate-600">SRC: GNEWS</span>
+            </div>
+            <NewsFeed />
           </div>
         </div>
       </section>
