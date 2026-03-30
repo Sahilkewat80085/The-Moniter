@@ -2,6 +2,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import LiveClock from "../components/LiveClock";
 import StockTicker from "../components/StockTicker.js";
+import IndianStockTicker from "../components/IndianStockTicker.js";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,9 +44,10 @@ export default function RootLayout({ children }) {
             </div>
           </nav>
           
-          <main className="flex-1 overflow-hidden relative pb-8">
+          <main className="flex-1 overflow-hidden relative pb-16">
             {children}
           </main>
+          <IndianStockTicker />
           <StockTicker />
         </div>
       </body>

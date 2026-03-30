@@ -141,3 +141,28 @@ body {
   font-size: 0.75rem;
   margin: 0 0.25rem;
 }
+
+/* Indian Stock Ticker - Above the existing ticker, reverse scroll */
+.ticker-top {
+  position: fixed;
+  bottom: 32px; /* Directly above the existing ticker */
+  top: auto;
+}
+
+.ticker-track-reverse {
+  animation: tickerScrollReverse 50s linear infinite;
+}
+
+.ticker-track-reverse:hover,
+.ticker-track-reverse.paused {
+  animation-play-state: paused;
+}
+
+@keyframes tickerScrollReverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}

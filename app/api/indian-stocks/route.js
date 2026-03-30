@@ -1,27 +1,27 @@
 import { NextResponse } from "next/server";
 
-// Symbol map using Yahoo Finance symbols (more reliable, no API key needed)
-const TICKER_MAP = [
-  { symbol: "GC=F",     display: "GOLD",    name: "Gold Futures"        },
-  { symbol: "^GSPC",    display: "S&P 500", name: "S&P 500"             },
-  { symbol: "BTC-USD",  display: "BTC",     name: "Bitcoin"             },
-  { symbol: "ETH-USD",  display: "ETH",     name: "Ethereum"            },
-  { symbol: "^DJI",     display: "DOW",     name: "Dow Jones"           },
-  { symbol: "^IXIC",    display: "NASDAQ",  name: "Nasdaq Composite"     },
-  { symbol: "CL=F",     display: "OIL",     name: "Crude Oil WTI"        },
-  { symbol: "DX=F",     display: "DXY",     name: "Dollar Index"         },
-  { symbol: "SI=F",     display: "SILVER",  name: "Silver Futures"        },
-  { symbol: "AAPL",     display: "AAPL",    name: "Apple Inc."           },
-  { symbol: "NVDA",     display: "NVDA",    name: "NVIDIA Corp."         },
-  { symbol: "TSLA",     display: "TSLA",    name: "Tesla Inc."           },
-  { symbol: "MSFT",     display: "MSFT",    name: "Microsoft"            },
-  { symbol: "AMZN",     display: "AMZN",    name: "Amazon"               },
-  { symbol: "META",     display: "META",    name: "Meta Platforms"       },
-  { symbol: "GOOGL",    display: "GOOGL",   name: "Alphabet"             },
-  { symbol: "XRP-USD",  display: "XRP",     name: "Ripple"               },
-  { symbol: "SOL-USD",  display: "SOL",     name: "Solana"               },
-  { symbol: "^VIX",     display: "VIX",     name: "Volatility Index"      },
-  { symbol: "EURUSD=X", display: "EUR/USD", name: "Euro Dollar"          },
+// Indian NSE stocks - Yahoo Finance symbols
+const INDIAN_TICKER_MAP = [
+  { symbol: "RELIANCE.NS",  display: "RELIANCE",  name: "Reliance Industries"  },
+  { symbol: "TCS.NS",       display: "TCS",       name: "Tata Consultancy"     },
+  { symbol: "INFY.NS",      display: "INFY",      name: "Infosys"              },
+  { symbol: "HDFCBANK.NS",  display: "HDFC",      name: "HDFC Bank"            },
+  { symbol: "ICICIBANK.NS", display: "ICICI",     name: "ICICI Bank"           },
+  { symbol: "BHARTIARTL.NS",display: "BHARTI",    name: "Bharti Airtel"        },
+  { symbol: "ITC.NS",       display: "ITC",       name: "ITC Ltd"              },
+  { symbol: "SBIN.NS",      display: "SBIN",      name: "State Bank of India"  },
+  { symbol: "KOTAKBANK.NS", display: "KOTAK",     name: "Kotak Mahindra Bank"  },
+  { symbol: "LT.NS",        display: "LT",        name: "Larsen & Toubro"      },
+  { symbol: "WIPRO.NS",     display: "WIPRO",     name: "Wipro"                },
+  { symbol: "HCLTECH.NS",   display: "HCL",       name: "HCL Technologies"     },
+  { symbol: "MARUTI.NS",    display: "MARUTI",    name: "Maruti Suzuki"        },
+  { symbol: "AXISBANK.NS",  display: "AXIS",      name: "Axis Bank"            },
+  { symbol: "TATAMOTORS.NS",display: "TATAMOT",   name: "Tata Motors"          },
+  { symbol: "SUNPHARMA.NS", display: "SUNPH",     name: "Sun Pharma"           },
+  { symbol: "^NSEI",        display: "NIFTY 50",  name: "Nifty 50 Index"       },
+  { symbol: "BAJFINANCE.NS",display: "BAJFIN",    name: "Bajaj Finance"        },
+  { symbol: "ASIANPAINT.NS",display: "ASIANPT",   name: "Asian Paints"         },
+  { symbol: "TITAN.NS",     display: "TITAN",     name: "Titan Company"        },
 ];
 
 // Cache
@@ -30,6 +30,7 @@ let cacheTimestamp = 0;
 const CACHE_TTL = 15_000;
 
 async function fetchYahooQuote(symbol) {
+  // Yahoo Finance API - free, no key required
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`;
 
   const res = await fetch(url, {
@@ -77,7 +78,7 @@ export async function GET() {
 
   // Fetch all symbols in parallel
   const results = await Promise.allSettled(
-    TICKER_MAP.map(async (t) => {
+    INDIAN_TICKER_MAP.map(async (t) => {
       const quote = await fetchYahooQuote(t.symbol);
       return { symbol: t.symbol, ...quote };
     })
@@ -85,11 +86,11 @@ export async function GET() {
 
   // Merge results
   results.forEach((result, idx) => {
-    const t = TICKER_MAP[idx];
+    const t = INDIAN_TICKER_MAP[idx];
     if (result.status === "fulfilled") {
       priceCache[t.symbol] = { ...result.value, error: false };
     } else {
-      console.warn(`[stocks] ${t.symbol}: ${result.reason?.message}`);
+      console.warn(`[indian-stocks] ${t.symbol}: ${result.reason?.message}`);
       if (!priceCache[t.symbol]) {
         priceCache[t.symbol] = { price: null, change: 0, changePercent: 0, error: true };
       }
@@ -102,7 +103,7 @@ export async function GET() {
 }
 
 function buildResponse() {
-  return TICKER_MAP.map((t) => ({
+  return INDIAN_TICKER_MAP.map((t) => ({
     symbol: t.symbol,
     display: t.display,
     name: t.name,
