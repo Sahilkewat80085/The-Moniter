@@ -18,7 +18,7 @@
 
 import React, { useRef, useState, useCallback, useMemo, useEffect, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Sphere } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -257,37 +257,194 @@ function EarthSphere() {
 // APPROXIMATE LAND DETECTION
 // Rough bounding boxes for major landmasses.
 // Used for the procedural dot-map texture generation.
-// Not to be confused with accurate GIS — this is artistic approximation.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function isApproxLand(lat, lon) {
-  // North America
-  if (lat > 15 && lat < 72 && lon > -170 && lon < -52) return true;
-  // South America
-  if (lat > -56 && lat < 13 && lon > -82 && lon < -34) return true;
-  // Europe
-  if (lat > 35 && lat < 72 && lon > -10 && lon < 40) return true;
-  // Africa
-  if (lat > -35 && lat < 37 && lon > -18 && lon < 52) return true;
-  // Asia (rough)
-  if (lat > 0 && lat < 75 && lon > 26 && lon < 145) return true;
-  // Russia/Siberia
-  if (lat > 50 && lat < 78 && lon > 30 && lon < 180) return true;
-  // Southeast Asia
-  if (lat > -10 && lat < 28 && lon > 92 && lon < 145) return true;
-  // Australia
-  if (lat > -44 && lat < -10 && lon > 113 && lon < 154) return true;
-  // Greenland
-  if (lat > 60 && lat < 84 && lon > -55 && lon < -15) return true;
-  // Japan
-  if (lat > 30 && lat < 46 && lon > 128 && lon < 146) return true;
-  // UK
-  if (lat > 49 && lat < 61 && lon > -8 && lon < 2) return true;
-  // Scandinavia
-  if (lat > 54 && lat < 71 && lon > 4 && lon < 31) return true;
-  // India
-  if (lat > 8 && lat < 36 && lon > 68 && lon < 98) return true;
+  if (lat > 15 && lat < 72 && lon > -170 && lon < -52) return true;   // N. America
+  if (lat > -56 && lat < 13 && lon > -82 && lon < -34) return true;   // S. America
+  if (lat > 35 && lat < 72 && lon > -10 && lon < 40) return true;     // Europe
+  if (lat > -35 && lat < 37 && lon > -18 && lon < 52) return true;    // Africa
+  if (lat > 0 && lat < 75 && lon > 26 && lon < 145) return true;      // Asia
+  if (lat > 50 && lat < 78 && lon > 30 && lon < 180) return true;     // Russia
+  if (lat > -10 && lat < 28 && lon > 92 && lon < 145) return true;    // SE Asia
+  if (lat > -44 && lat < -10 && lon > 113 && lon < 154) return true;  // Australia
+  if (lat > 60 && lat < 84 && lon > -55 && lon < -15) return true;    // Greenland
+  if (lat > 30 && lat < 46 && lon > 128 && lon < 146) return true;    // Japan
+  if (lat > 49 && lat < 61 && lon > -8 && lon < 2) return true;       // UK
+  if (lat > 54 && lat < 71 && lon > 4 && lon < 31) return true;       // Scandinavia
+  if (lat > 8 && lat < 36 && lon > 68 && lon < 98) return true;       // India
   return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COUNTRY BORDERS
+// Fetches Natural Earth 110m GeoJSON from CDN and renders every country
+// polygon outline as 3D line segments projected onto the globe surface.
+//
+// The approach:
+//  1. Fetch countries.geo.json (≈120 KB, cached by browser)
+//  2. For each polygon ring, convert [lon, lat] → Vector3 at BORDER_RADIUS
+//  3. Build a single BufferGeometry of line pairs (A→B, B→C, …) per ring
+//  4. Render as <lineSegments> — one draw call for all borders
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BORDER_RADIUS = GLOBE_RADIUS + 0.004; // Sits just above the sphere surface
+// Use a CDN-hosted simplified world GeoJSON (Natural Earth 110m resolution)
+const GEOJSON_URLS = [
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json",
+  "https://unpkg.com/world-atlas@2.0.2/countries-110m.json",
+];
+
+/**
+ * Convert a GeoJSON polygon ring (array of [lon, lat] pairs) into
+ * a flat Float32Array of line-segment vertex pairs suitable for
+ * THREE.LineSegments (every two points = one segment).
+ */
+function ringToLineSegments(ring, radius) {
+  const verts = [];
+  for (let i = 0; i < ring.length - 1; i++) {
+    const [lonA, latA] = ring[i];
+    const [lonB, latB] = ring[i + 1];
+    const vA = latLonToVector3(latA, lonA, radius);
+    const vB = latLonToVector3(latB, lonB, radius);
+    verts.push(vA.x, vA.y, vA.z, vB.x, vB.y, vB.z);
+  }
+  return verts;
+}
+
+/**
+ * Recursively extract all rings from a GeoJSON geometry.
+ * Handles Polygon, MultiPolygon, and nested arrays.
+ */
+function extractRings(geometry) {
+  const rings = [];
+  if (geometry.type === "Polygon") {
+    for (const ring of geometry.coordinates) rings.push(ring);
+  } else if (geometry.type === "MultiPolygon") {
+    for (const poly of geometry.coordinates)
+      for (const ring of poly) rings.push(ring);
+  }
+  return rings;
+}
+
+/**
+ * Build THREE geometry from TopoJSON-converted features.
+ * world-atlas CDN returns TopoJSON — we convert the arcs manually.
+ * Each arc is an array of [dx, dy] delta-encoded coordinates in tile space.
+ */
+function buildGeometryFromTopojson(topo) {
+  const allVerts = [];
+
+  // TopoJSON to raw coordinates
+  // The transform scales integer arc coords to geographic lon/lat
+  const { scale, translate } = topo.transform;
+  const decode = (arc) => {
+    let x = 0, y = 0;
+    return arc.map(([dx, dy]) => {
+      x += dx;
+      y += dy;
+      return [x * scale[0] + translate[0], y * scale[1] + translate[1]];
+    });
+  };
+
+  // Decode all arcs up front
+  const decodedArcs = topo.arcs.map(decode);
+
+  // Countries object in this TopoJSON
+  const countries = topo.objects.countries;
+  if (!countries || !countries.geometries) return null;
+
+  for (const geom of countries.geometries) {
+    // Collect all arc index sequences for this geometry
+    let arcGroups = [];
+    if (geom.type === "Polygon") arcGroups = geom.arcs;
+    else if (geom.type === "MultiPolygon") arcGroups = geom.arcs.flat();
+
+    for (const arcIdxList of arcGroups) {
+      // Stitch arc segments together into a ring of [lon, lat] points
+      const ring = [];
+      for (const idx of arcIdxList) {
+        const arc = idx < 0 ? [...decodedArcs[~idx]].reverse() : decodedArcs[idx];
+        ring.push(...arc);
+      }
+      // Now treat ring as [[lon, lat], ...] pairs and build line segments
+      const segs = ringToLineSegments(ring, BORDER_RADIUS);
+      for (const v of segs) allVerts.push(v);
+    }
+  }
+
+  if (allVerts.length === 0) return null;
+  const positions = new Float32Array(allVerts);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  return geo;
+}
+
+function CountryBorders() {
+  const [geometry, setGeometry] = useState(null);
+  const groupRef = useRef();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Try CDN URLs in order until one succeeds
+    const tryFetch = (urls, index = 0) => {
+      if (index >= urls.length || cancelled) return;
+      fetch(urls[index])
+        .then((r) => r.json())
+        .then((data) => {
+          if (cancelled) return;
+          let geo = null;
+          // world-atlas returns TopoJSON
+          if (data.type === "Topology" && data.objects?.countries) {
+            geo = buildGeometryFromTopojson(data);
+          }
+          // Fallback: plain GeoJSON FeatureCollection
+          else if (data.type === "FeatureCollection" && data.features) {
+            const allVerts = [];
+            for (const feature of data.features) {
+              if (!feature.geometry) continue;
+              const rings = extractRings(feature.geometry);
+              for (const ring of rings) {
+                const segs = ringToLineSegments(ring, BORDER_RADIUS);
+                for (const v of segs) allVerts.push(v);
+              }
+            }
+            if (allVerts.length > 0) {
+              const positions = new Float32Array(allVerts);
+              geo = new THREE.BufferGeometry();
+              geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+            }
+          }
+          if (geo) setGeometry(geo);
+          else tryFetch(urls, index + 1);
+        })
+        .catch(() => tryFetch(urls, index + 1));
+    };
+
+    tryFetch(GEOJSON_URLS);
+    return () => { cancelled = true; };
+  }, []);
+
+  // Rotate in sync with the globe
+  useFrame(() => {
+    if (groupRef.current) groupRef.current.rotation.y += 0.0008;
+  });
+
+  if (!geometry) return null;
+
+  return (
+    <group ref={groupRef}>
+      <lineSegments geometry={geometry}>
+        <lineBasicMaterial
+          color="#2a7ab5"
+          transparent
+          opacity={0.7}
+          depthWrite={false}
+        />
+      </lineSegments>
+    </group>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -503,6 +660,8 @@ function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent }) {
       <CameraRig />
       <StarField />
       <EarthSphere />
+      {/* Country border lines — rendered just above the sphere surface */}
+      <CountryBorders />
       <EventMarkersLayer
         events={events}
         selectedEventId={selectedEventId}
