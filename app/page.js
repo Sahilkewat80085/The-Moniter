@@ -1,13 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { INITIAL_EVENTS } from "../lib/mockData";
 import EventCard from "../components/EventCard";
 import ImpactCard from "../components/ImpactCard";
 import MarketTicker from "../components/MarketTicker";
 import NewsFeed from "../components/NewsFeed";
-import MapView from "../components/MapView";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
+
+// Dynamic import prevents Three.js from running during SSR
+const GlobeView = dynamic(() => import("../components/GlobeView"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+        <span className="text-[10px] font-mono text-slate-600 tracking-widest uppercase">Initializing Globe</span>
+      </div>
+    </div>
+  ),
+});
 
 function getIndiaTime() {
   const now = new Date();
@@ -64,10 +77,15 @@ export default function Dashboard() {
 
       {/* Center Panel: Intelligence Analysis */}
       <section className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Map Header */}
-        <div className="absolute top-0 inset-x-0 h-48 pointer-events-none z-0">
-          <MapView events={events} selectedEventId={selectedEventId} />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
+        {/* 3D Globe Header */}
+        <div className="absolute top-0 inset-x-0 h-56 pointer-events-auto z-0">
+          <GlobeView
+            events={events}
+            selectedEventId={selectedEventId}
+            onSelectEvent={(ev) => setSelectedEventId(ev.id)}
+            height="100%"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background to-transparent pointer-events-none" />
         </div>
 
         <div className="flex-1 flex flex-col z-10 p-8 pt-44 overflow-y-auto custom-scrollbar">
