@@ -35,7 +35,6 @@ export default function Dashboard() {
   const events = useIntelligenceFeed();
   // null = no event selected → full-globe default view
   const [selectedEventId, setSelectedEventId] = useState(null);
-  const [activeTab, setActiveTab] = useState("ALL");
   const [syncTime, setSyncTime] = useState("");
 
   useEffect(() => {
@@ -172,44 +171,13 @@ export default function Dashboard() {
       {/* ── Right Panel: Markets + Filters + News ─────────────────────── */}
       <section className="w-[400px] border-l border-border flex flex-col bg-panel/40 backdrop-blur-xl flex-shrink-0">
         <div className="p-8 flex flex-col gap-10 overflow-y-auto custom-scrollbar h-full">
-          <div>
+          <div className="flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Source Intelligence</h2>
               <span className="text-[9px] font-mono text-positive tracking-widest">● VERIFIED</span>
             </div>
-            <EventNewsBlog event={selectedEvent} />
-          </div>
-
-          <div className="intelligence-panel p-6 rounded-xl border border-border/50 bg-background/30">
-            <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 underline decoration-info/30 underline-offset-8">Scenario Filters</h2>
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Class</label>
-                <div className="flex flex-wrap gap-2">
-                  {["ALL", "MACRO", "CRYPTO", "STOCKS", "FX"].map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => setActiveTab(tag)}
-                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-all border ${
-                        activeTab === tag ? "bg-info text-white border-info" : "bg-slate-800/50 text-slate-500 border-border hover:border-slate-600"
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Security Level</label>
-                <div className="h-1.5 w-full bg-slate-900 rounded-full border border-border">
-                  <div className="h-full w-2/3 bg-warning rounded-full glow-warning shadow-[0_0_10px_rgba(245,197,66,0.3)]"></div>
-                </div>
-                <div className="flex justify-between text-[9px] font-mono text-slate-600">
-                  <span>UNCLASSIFIED</span>
-                  <span className="text-warning">LEVEL 3 - MODERATE</span>
-                </div>
-              </div>
+            <div className="flex-1 min-h-0">
+              <EventNewsBlog event={selectedEvent} />
             </div>
           </div>
 

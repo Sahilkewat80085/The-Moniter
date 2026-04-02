@@ -3,7 +3,7 @@ import React from "react";
 export default function EventNewsBlog({ event }) {
   if (!event) {
     return (
-      <div className="p-6 rounded-xl border border-dashed border-border/50 flex flex-col items-center justify-center text-center h-[280px]">
+      <div className="p-6 rounded-xl border border-dashed border-border/50 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
         <div className="w-10 h-10 rounded-full bg-slate-800/30 border border-slate-700/50 flex items-center justify-center mb-4">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -26,7 +26,7 @@ export default function EventNewsBlog({ event }) {
   };
 
   return (
-    <div className="flex flex-col border border-border/70 rounded-xl bg-background/40 overflow-hidden group hover:border-info/30 transition-colors">
+    <div className="flex flex-col border border-border/70 rounded-xl bg-background/40 overflow-hidden group hover:border-info/30 transition-colors h-full min-h-[350px]">
       {/* Blog Image/Banner Placeholder */}
       <div className="w-full h-36 bg-slate-900 border-b border-border/50 relative overflow-hidden flex items-center justify-center">
         {/* Abstract pattern */}
@@ -50,7 +50,7 @@ export default function EventNewsBlog({ event }) {
       </div>
       
       {/* Article Content */}
-      <div className="p-5 flex flex-col gap-3">
+      <div className="p-5 flex flex-col flex-1 gap-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-info/80 animate-pulse" />
