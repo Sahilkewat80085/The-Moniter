@@ -30,20 +30,12 @@ export default function EventCard({ event, isActive, onClick }) {
             {event.timestamp} | {event.source}
           </span>
         </div>
-        <span className="text-[10px] font-bold text-slate-600">ID:{event.id.split('_')[1]}</span>
       </div>
 
       <h3 className="text-sm font-semibold leading-snug text-slate-200 line-clamp-2 uppercase">
         {event.title}
       </h3>
 
-      <div className="flex flex-wrap gap-1 mt-1">
-        {event.tags.map(tag => (
-          <span key={tag} className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-400 font-medium">
-            {tag}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }

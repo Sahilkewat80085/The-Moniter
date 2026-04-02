@@ -59,7 +59,7 @@ export default function Dashboard() {
       {/* ── Left Panel: Event Feed ─────────────────────────────────────── */}
       <section className="w-80 border-r border-border flex flex-col bg-panel/80 flex-shrink-0">
         <div className="p-4 border-b border-border flex justify-between items-center bg-panel/50 backdrop-blur-sm">
-          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Live Intel Feed</h2>
+          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Notifications</h2>
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-positive pulse-green"></span>
             <span className="text-[10px] font-bold text-positive tracking-widest">LIVE</span>
@@ -77,9 +77,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-border bg-panel/50 text-[10px] text-slate-600 font-mono">
-          Last synchronization: {syncTime} IND
-        </div>
       </section>
 
       {/* ── Center Panel: Full Globe + optional event drawer ──────────── */}
