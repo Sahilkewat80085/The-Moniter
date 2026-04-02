@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { INITIAL_EVENTS } from "../lib/mockData";
 import EventCard from "../components/EventCard";
 import ImpactCard from "../components/ImpactCard";
-import MarketTicker from "../components/MarketTicker";
+import EventNewsBlog from "../components/EventNewsBlog";
 import NewsFeed from "../components/NewsFeed";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
@@ -174,10 +174,10 @@ export default function Dashboard() {
         <div className="p-8 flex flex-col gap-10 overflow-y-auto custom-scrollbar h-full">
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Global Markets</h2>
-              <span className="text-[9px] font-mono text-positive tracking-widest">● LIVE</span>
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Source Intelligence</h2>
+              <span className="text-[9px] font-mono text-positive tracking-widest">● VERIFIED</span>
             </div>
-            <MarketTicker />
+            <EventNewsBlog event={selectedEvent} />
           </div>
 
           <div className="intelligence-panel p-6 rounded-xl border border-border/50 bg-background/30">
