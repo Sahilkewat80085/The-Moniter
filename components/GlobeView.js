@@ -710,12 +710,10 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
     >
       <div
         style={{
-          background: "rgba(8, 14, 24, 0.96)",
-          border: `1px solid ${colors.core}40`,
-          boxShadow: `0 0 20px ${colors.core}20, 0 4px 32px rgba(0,0,0,0.8)`,
-          backdropFilter: "blur(12px)",
+          border: `1px solid color-mix(in srgb, ${colors.core} 40%, transparent)`,
+          boxShadow: `0 0 20px color-mix(in srgb, ${colors.core} 20%, transparent), 0 4px 32px rgba(0,0,0,0.5)`,
         }}
-        className="rounded-lg p-3 min-w-[200px]"
+        className="rounded-lg p-3 min-w-[200px] bg-panel/95 backdrop-blur-xl"
       >
         {/* Sentiment badge */}
         <div className="flex items-center justify-between mb-2">
@@ -733,7 +731,7 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
         </div>
 
         {/* Headline */}
-        <p className="text-[11px] font-semibold text-slate-100 leading-snug mb-2">
+        <p className="text-[11px] font-semibold text-foreground leading-snug mb-2">
           {event.title}
         </p>
 
@@ -911,10 +909,10 @@ export default function GlobeView({
       {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 0, 10], fov: 45, near: 0.1, far: 200 }}
-        style={{ background: "#0b0f14" }}
+        style={{ background: "transparent" }}
         gl={{
           antialias: true,
-          alpha: false,
+          alpha: true,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.0,

@@ -49,9 +49,9 @@ export default function IndianStockTicker() {
   }, []);
 
   const getColor = (pct) => {
-    if (pct > 0) return "#00c853";
-    if (pct < 0) return "#ff4d4f";
-    return "#9ca3af";
+    if (pct > 0) return "var(--positive-color)";
+    if (pct < 0) return "var(--negative-color)";
+    return "var(--foreground)";
   };
 
   const items = tickerData.length ? [...tickerData, ...tickerData] : [];
@@ -60,7 +60,7 @@ export default function IndianStockTicker() {
     return (
       <div className="ticker-wrapper ticker-top">
         <div className="ticker-track ticker-track-reverse" style={{ justifyContent: "center" }}>
-          <span className="ticker-item" style={{ color: "#64748b" }}>
+          <span className="ticker-item text-slate-500">
             Connecting to Indian market data...
           </span>
         </div>
@@ -78,13 +78,13 @@ export default function IndianStockTicker() {
         {items.map((item, index) => (
           <span key={`${item.symbol}-${index}`} className="ticker-item">
             <span
-              className="font-bold text-white text-xs tracking-wide"
+              className="font-bold text-foreground text-xs tracking-wide"
               style={{ marginRight: "4px" }}
             >
               {item.display}
             </span>
             <span
-              className="text-slate-300 text-xs font-mono"
+              className="text-slate-500 dark:text-slate-300 text-xs font-mono"
               style={{ marginRight: "4px" }}
             >
               {item.error ? "N/A" : formatPriceINR(item.price)}

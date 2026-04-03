@@ -65,10 +65,10 @@ export default function MarketTicker() {
       {tickers.map((ticker) => {
         const isUp = ticker.changePercent >= 0;
         const color = ticker.error
-          ? "#4b5563"
+          ? "var(--foreground)"
           : isUp
-          ? "#00c853"
-          : "#ff4d4f";
+          ? "var(--positive-color)"
+          : "var(--negative-color)";
 
         return (
           <div
@@ -76,7 +76,7 @@ export default function MarketTicker() {
             className="p-3 bg-background border border-border rounded-lg flex flex-col gap-1 hover:border-info/50 transition-colors group"
           >
             <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono">
-              <span className="group-hover:text-slate-300 transition-colors uppercase">
+              <span className="group-hover:text-slate-500 dark:group-hover:text-slate-300 transition-colors uppercase">
                 {ticker.display}
               </span>
               {!ticker.error && (
@@ -85,7 +85,7 @@ export default function MarketTicker() {
                 </span>
               )}
             </div>
-            <div className="text-lg font-bold tabular-nums group-hover:text-white transition-colors" style={{ color: ticker.error ? "#4b5563" : "#e2e8f0" }}>
+            <div className="text-lg font-bold tabular-nums group-hover:text-foreground transition-colors" style={{ color: ticker.error ? "var(--foreground)" : "var(--foreground)" }}>
               {ticker.error ? "N/A" : fmt(ticker.price, ticker.symbol)}
             </div>
           </div>

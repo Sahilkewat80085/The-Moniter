@@ -1,23 +1,59 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0b0f14;
-  --color-panel: #121821;
-  --color-border: #1f2a36;
-  --color-negative: #ff4d4f;
-  --color-positive: #00c853;
-  --color-warning: #f5c542;
-  --color-info: #3b82f6;
+  --color-background: var(--bg-color);
+  --color-panel: var(--panel-color);
+  --color-border: var(--border-color);
+  --color-negative: var(--negative-color);
+  --color-positive: var(--positive-color);
+  --color-warning: var(--warning-color);
+  --color-info: var(--info-color);
+  --color-foreground: var(--fg-color);
 }
 
 :root {
-  --background: #0b0f14;
-  --foreground: #e2e8f0;
+  --bg-color: #f8fafc;
+  --fg-color: #0f172a;
+  --panel-color: #ffffff;
+  --border-color: #e2e8f0;
+  
+  --negative-color: #ef4444;
+  --positive-color: #22c55e;
+  --warning-color: #d97706;
+  --info-color: #3b82f6;
+
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: #e2e8f0;
+  --card-bg-hover: rgba(255, 255, 255, 0.9);
+}
+
+.dark {
+  --bg-color: #0b0f14;
+  --fg-color: #e2e8f0;
+  --panel-color: #121821;
+  --border-color: #1f2a36;
+  
+  --negative-color: #ff4d4f;
+  --positive-color: #00c853;
+  --warning-color: #f5c542;
+  --info-color: #3b82f6;
+
+  --scrollbar-track: #0b111a;
+  --scrollbar-thumb: #1f2a36;
+  --scrollbar-thumb-hover: #3b82f6;
+
+  --card-bg: rgba(18, 24, 33, 0.7);
+  --card-border: #2d3748;
+  --card-bg-hover: rgba(18, 24, 33, 0.9);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--fg-color);
+  background: var(--bg-color);
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
 }
@@ -29,35 +65,35 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b111a;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2a36;
+  background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Intelligence Panel Glassmorphism */
 .intelligence-panel {
-  background: #121821;
-  border: 1px solid #1f2a36;
+  background: var(--panel-color);
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .intelligence-card {
-  background: rgba(18, 24, 33, 0.7);
-  border: 1px solid #2d3748;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   backdrop-filter: blur(4px);
   transition: all 0.2s ease-in-out;
 }
 
 .intelligence-card:hover {
-  border-color: #3b82f6 !important;
-  background: rgba(18, 24, 33, 0.9);
+  border-color: var(--info-color) !important;
+  background: var(--card-bg-hover);
 }
 
 /* Animation utilities */
@@ -95,8 +131,8 @@ body {
   left: 0;
   right: 0;
   height: 32px;
-  background: #0b0f14;
-  border-top: 1px solid #1f2a36;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color);
   z-index: 50;
   overflow: hidden;
 }
@@ -133,11 +169,11 @@ body {
 }
 
 .ticker-item:hover {
-  background: rgba(31, 42, 54, 0.5);
+  background: rgba(128, 128, 128, 0.1);
 }
 
 .ticker-separator {
-  color: #1f2a36;
+  color: var(--border-color);
   font-size: 0.75rem;
   margin: 0 0.25rem;
 }
@@ -145,7 +181,7 @@ body {
 /* Indian Stock Ticker - Above the existing ticker, reverse scroll */
 .ticker-top {
   position: fixed;
-  bottom: 32px; /* Directly above the existing ticker */
+  bottom: 32px;
   top: auto;
 }
 

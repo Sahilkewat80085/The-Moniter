@@ -101,10 +101,10 @@ export default function Dashboard() {
           }}
         >
           {/* Fade gradient bridge so the panel blends into globe */}
-          <div className="h-20 bg-gradient-to-b from-transparent to-[#0b0f14] pointer-events-none" />
+          <div className="h-20 bg-gradient-to-b from-transparent to-background pointer-events-none" />
 
           <div
-            className="bg-[#0b0f14]/95 backdrop-blur-xl border-t border-border overflow-y-auto custom-scrollbar"
+            className="bg-background/95 backdrop-blur-xl border-t border-border overflow-y-auto custom-scrollbar"
             style={{ maxHeight: "55vh" }}
           >
             {selectedEvent && (
@@ -122,15 +122,15 @@ export default function Dashboard() {
                       <span
                         className="px-2 py-0.5 text-[9px] font-bold rounded uppercase tracking-widest border"
                         style={{
-                          color: selectedEvent.sentiment === "bullish" ? "#00e676" : selectedEvent.sentiment === "bearish" ? "#ff1744" : "#ffc400",
-                          borderColor: selectedEvent.sentiment === "bullish" ? "#00e67630" : selectedEvent.sentiment === "bearish" ? "#ff174430" : "#ffc40030",
-                          background: selectedEvent.sentiment === "bullish" ? "#00e67610" : selectedEvent.sentiment === "bearish" ? "#ff174410" : "#ffc40010",
+                          color: selectedEvent.sentiment === "bullish" ? "var(--positive-color)" : selectedEvent.sentiment === "bearish" ? "var(--negative-color)" : "var(--warning-color)",
+                          borderColor: selectedEvent.sentiment === "bullish" ? "color-mix(in srgb, var(--positive-color) 30%, transparent)" : selectedEvent.sentiment === "bearish" ? "color-mix(in srgb, var(--negative-color) 30%, transparent)" : "color-mix(in srgb, var(--warning-color) 30%, transparent)",
+                          background: selectedEvent.sentiment === "bullish" ? "color-mix(in srgb, var(--positive-color) 10%, transparent)" : selectedEvent.sentiment === "bearish" ? "color-mix(in srgb, var(--negative-color) 10%, transparent)" : "color-mix(in srgb, var(--warning-color) 10%, transparent)",
                         }}
                       >
                         {selectedEvent.sentiment?.toUpperCase()}
                       </span>
                     </div>
-                    <h1 className="text-2xl font-extrabold text-white tracking-tight leading-tight uppercase italic max-w-3xl">
+                    <h1 className="text-2xl font-extrabold text-foreground tracking-tight leading-tight uppercase italic max-w-3xl">
                       {selectedEvent.title}
                     </h1>
                   </div>
@@ -138,7 +138,7 @@ export default function Dashboard() {
                   {/* Close button */}
                   <button
                     onClick={handleClose}
-                    className="flex-shrink-0 ml-4 mt-1 w-8 h-8 rounded-full border border-border bg-panel/50 hover:border-slate-500 hover:bg-slate-800 transition-all flex items-center justify-center text-slate-500 hover:text-white"
+                    className="flex-shrink-0 ml-4 mt-1 w-8 h-8 rounded-full border border-border bg-panel hover:border-slate-500 transition-all flex items-center justify-center text-slate-500 hover:text-foreground"
                     aria-label="Close event panel"
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
