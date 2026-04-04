@@ -82,26 +82,42 @@ export function useIntelligenceFeed() {
             const matchedCity = CITIES.find(c => textToAnalyze.includes(c.name.toLowerCase()));
             
             let region = "Global";
-            let lat = (hash % 180) - 90;
-            let lng = ((hash >> 1) % 360) - 180;
-            let foundExact = false;
+            let lat = 0;
+            let lng = 0;
 
             if (matchedCity) {
               region = matchedCity.region;
               lat = matchedCity.lat;
               lng = matchedCity.lng;
-              foundExact = true;
             } else {
-              // Infer Region
-              if (/(us|america|biden|washington|new york|fed|federal reserve)/i.test(textToAnalyze)) { region = "North America"; lat = 38.9; lng = -77.0; }
-              else if (/(china|japan|asia|tokyo|beijing|india)/i.test(textToAnalyze)) { region = "Asia"; lat = 35.8; lng = 104.1; }
-              else if (/(europe|uk|london|eu|germany|france|ecb)/i.test(textToAnalyze)) { region = "Europe"; lat = 50.1; lng = 8.6; }
-              else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; lat = 25.2; lng = 55.2; }
-              
-              // Only add randomness if we didn't find an exact address, to avoid exact overlaps of default regions
-              lat += (hash % 10) / 10;
-              lng += ((hash >> 3) % 10) / 10;
+              // Contextual / Country Intelligence
+              if (/(us|america|biden|washington|new york|fed|federal reserve|wall street)/i.test(textToAnalyze)) { region = "North America"; lat = 40.7128; lng = -74.0060; }
+              else if (/(china|beijing|xi jinping|pboc)/i.test(textToAnalyze)) { region = "Asia"; lat = 39.9042; lng = 116.4074; }
+              else if (/(india|rbi|delhi|mumbai|sensex)/i.test(textToAnalyze)) { region = "Asia"; lat = 19.0760; lng = 72.8777; }
+              else if (/(uk|london|britain|fca|boe)/i.test(textToAnalyze)) { region = "Europe"; lat = 51.5074; lng = -0.1278; }
+              else if (/(europe|eu|ecb|germany|france)/i.test(textToAnalyze)) { region = "Europe"; lat = 50.1109; lng = 8.6821; } // Frankfurt
+              else if (/(australia|rba|sydney)/i.test(textToAnalyze)) { region = "Oceania"; lat = -33.8688; lng = 151.2093; }
+              else if (/(japan|tokyo|boj)/i.test(textToAnalyze)) { region = "Asia"; lat = 35.6762; lng = 139.6503; }
+              else if (/(taiwan|tsmc)/i.test(textToAnalyze)) { region = "Asia"; lat = 25.0330; lng = 121.5654; }
+              else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; lat = 25.2048; lng = 55.2708; }
+              else if (/(russia|putin|moscow)/i.test(textToAnalyze)) { region = "Europe"; lat = 55.7558; lng = 37.6173; }
+              else {
+                // If totally unknown, place it in one of the major global financial hubs
+                const hubs = [
+                  { lat: 40.7128, lng: -74.0060, reg: "North America" }, // NY
+                  { lat: 51.5074, lng: -0.1278, reg: "Europe" }, // London
+                  { lat: 1.3521, lng: 103.8198, reg: "Asia" }, // Singapore
+                ];
+                const hub = hubs[hash % hubs.length];
+                lat = hub.lat;
+                lng = hub.lng;
+                region = hub.reg;
+              }
             }
+
+            // Micro-jitter to prevent z-fighting / exact stacking if multiple events hit the same city
+            lat += (hash % 10) * 0.15 * (hash % 2 === 0 ? 1 : -1);
+            lng += ((hash >> 1) % 10) * 0.15 * ((hash >> 2) % 2 === 0 ? 1 : -1);
             
             // Infer Sentiment
             let sentiment = "neutral";
