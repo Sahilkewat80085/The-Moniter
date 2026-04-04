@@ -184,14 +184,6 @@ function EarthSphere() {
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     
-    // Slow auto-rotation on Y axis
-    if (globeRef.current) {
-      globeRef.current.rotation.y += 0.0008;
-    }
-    if (rimRef.current) {
-      rimRef.current.rotation.y += 0.0008;
-    }
-
     // Subtle glow pulse
     if (glowRef.current && glowRef.current.material) {
       glowRef.current.material.opacity = 0.12 + Math.sin(t * 0.5) * 0.03;
@@ -426,10 +418,7 @@ function CountryBorders() {
     return () => { cancelled = true; };
   }, []);
 
-  // Rotate in sync with the globe
-  useFrame(() => {
-    if (groupRef.current) groupRef.current.rotation.y += 0.0008;
-  });
+
 
   if (!geometry) return null;
 
@@ -566,10 +555,6 @@ function PulsingMarker({ event, position, colors, isHovered, isSelected, onClick
 function EventMarkersLayer({ events, selectedEventId, onSelectEvent, onHoverEvent }) {
   const groupRef = useRef();
 
-  useFrame(() => {
-    if (groupRef.current) groupRef.current.rotation.y += 0.0008;
-  });
-
   const markers = useMemo(() =>
     events.map((event) => {
       const [lat, lon] = event.coordinates;
@@ -660,20 +645,32 @@ function CameraRig() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent }) {
+  const masterGroupRef = useRef();
+
+  useFrame(() => {
+    if (masterGroupRef.current) {
+      masterGroupRef.current.rotation.y += 0.0008;
+    }
+  });
+
   return (
     <>
       <SceneLighting />
       <CameraRig />
       <StarField />
-      <EarthSphere />
-      {/* Country border lines — rendered just above the sphere surface */}
-      <CountryBorders />
-      <EventMarkersLayer
-        events={events}
-        selectedEventId={selectedEventId}
-        onSelectEvent={onSelectEvent}
-        onHoverEvent={onHoverEvent}
-      />
+      
+      <group ref={masterGroupRef}>
+        <EarthSphere />
+        {/* Country border lines — rendered just above the sphere surface */}
+        <CountryBorders />
+        <EventMarkersLayer
+          events={events}
+          selectedEventId={selectedEventId}
+          onSelectEvent={onSelectEvent}
+          onHoverEvent={onHoverEvent}
+        />
+      </group>
+      
       <OrbitControls
         enablePan={false}
         enableZoom={true}
