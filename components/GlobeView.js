@@ -564,6 +564,12 @@ function PulsingMarker({ event, position, colors, isHovered, isSelected, onClick
 // ─────────────────────────────────────────────────────────────────────────────
 
 function EventMarkersLayer({ events, selectedEventId, onSelectEvent, onHoverEvent }) {
+  const groupRef = useRef();
+
+  useFrame(() => {
+    if (groupRef.current) groupRef.current.rotation.y += 0.0008;
+  });
+
   const markers = useMemo(() =>
     events.map((event) => {
       const [lat, lon] = event.coordinates;
@@ -575,7 +581,7 @@ function EventMarkersLayer({ events, selectedEventId, onSelectEvent, onHoverEven
   );
 
   return (
-    <group>
+    <group ref={groupRef}>
       {markers.map(({ event, position, colors }) => (
         <PulsingMarker
           key={event.id}
