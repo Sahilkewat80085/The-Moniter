@@ -39,32 +39,42 @@ export function useIntelligenceFeed() {
         if (json.success && json.articles?.length > 0) {
           const formattedEvents = json.articles.map((article, idx) => {
             const hash = hashString(article.title || "");
-            const sentimentOptions = ["bullish", "bearish", "neutral"];
-            const sentiment = sentimentOptions[hash % 3];
+            const textToAnalyze = (article.title + " " + (article.description || "")).toLowerCase();
             
-            const regionOptions = ["Global", "US", "Asia", "Europe", "Middle East"];
-            const region = regionOptions[(hash >> 2) % 5];
+            // Infer Region
+            let region = "Global";
+            let lat = (hash % 180) - 90;
+            let lng = ((hash >> 1) % 360) - 180;
+            if (/(us|america|biden|washington|new york|fed|federal reserve)/i.test(textToAnalyze)) { region = "North America"; lat = 38.9; lng = -77.0; }
+            else if (/(china|japan|asia|tokyo|beijing|india)/i.test(textToAnalyze)) { region = "Asia"; lat = 35.8; lng = 104.1; }
+            else if (/(europe|uk|london|eu|germany|france|ecb)/i.test(textToAnalyze)) { region = "Europe"; lat = 50.1; lng = 8.6; }
+            else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; lat = 25.2; lng = 55.2; }
             
-            const impactScore = (hash % 40) + 60;
-            
-            // Deterministic coordinates based on region
-            let lat = 0, lng = 0;
-            if (region === "US") { lat = 38.9; lng = -77.0; }
-            else if (region === "Asia") { lat = 35.8; lng = 104.1; }
-            else if (region === "Europe") { lat = 50.1; lng = 8.6; }
-            else if (region === "Middle East") { lat = 25.2; lng = 55.2; }
-            else { lat = (hash % 180) - 90; lng = ((hash >> 1) % 360) - 180; }
-
-            // Add slight randomness based on hash to avoid exact overlaps
             lat += (hash % 10) / 10;
             lng += ((hash >> 3) % 10) / 10;
+            
+            // Infer Sentiment
+            let sentiment = "neutral";
+            let bullish = 30;
+            let bearish = 30;
+            if (/(growth|surge|jump|gain|up|bull|positive|soar|buy|high)/i.test(textToAnalyze)) { sentiment = "bullish"; bullish = 75; bearish = 15; }
+            else if (/(drop|fall|loss|down|bear|negative|plunge|crash|fear|sell|low|war|crisis)/i.test(textToAnalyze)) { sentiment = "bearish"; bearish = 80; bullish = 10; }
+            
+            const impactScore = Math.floor(Math.random() * 40) + 60; // 60-99
+            
+            // Determine affected asset
+            let asset = "Global Index";
+            if (/(oil|crude|energy)/i.test(textToAnalyze)) asset = "Crude Oil";
+            else if (/(gold|silver)/i.test(textToAnalyze)) asset = "Gold";
+            else if (/(tech|apple|microsoft|nvidia|ai)/i.test(textToAnalyze)) asset = "NASDAQ";
+            else if (/(dollar|fed|rates)/i.test(textToAnalyze)) asset = "USD Indicator";
 
             return {
-              id: `ev_${hash}_${idx}`,
+              id: `ev_live_${hash}_${idx}`,
               title: article.title,
               timestamp: timeAgo(article.publishedAt),
               source: article.source?.toUpperCase() || "GLOBAL NEWS",
-              tags: ["Breaking", region],
+              tags: ["Live Update", region],
               sentiment: sentiment,
               impactScore: impactScore,
               region: region,
@@ -72,11 +82,11 @@ export function useIntelligenceFeed() {
               description: article.description || "No further details available for this event.",
               impacts: [
                 { 
-                  asset: "Global Index", 
-                  bullish: hash % 100, 
-                  bearish: (hash >> 1) % 100, 
-                  neutral: (hash >> 2) % 30, 
-                  reasoning: ["Algorithmic trigger", "Market sentiment shift"] 
+                  asset: asset, 
+                  bullish: bullish, 
+                  bearish: bearish, 
+                  neutral: 100 - bullish - bearish, 
+                  reasoning: ["Real-time market analysis", "News sentiment parsing"] 
                 }
               ]
             };

@@ -21,8 +21,8 @@ export async function GET() {
     });
   }
 
-  // Simple single-word query avoids 400 encoding issues on free tier
-  const url = `https://gnews.io/api/v4/search?q=stocks&lang=en&country=us&max=10&sortby=publishedAt&token=${GNEWS_KEY}`;
+  // Simple query for global business and geopolitics
+  const url = `https://gnews.io/api/v4/search?q="global economy" OR geopolitics OR finance&lang=en&max=20&sortby=publishedAt&token=${GNEWS_KEY}`;
 
   try {
     const res = await fetch(url, {
