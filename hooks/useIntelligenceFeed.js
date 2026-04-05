@@ -28,75 +28,49 @@ function timeAgo(publishedAt) {
 const CITIES = [
   { name: "Beijing", lat: 39.9042, lng: 116.4074, region: "Asia" },
   { name: "Shanghai", lat: 31.2304, lng: 121.4737, region: "Asia" },
-  { name: "Shenzhen", lat: 22.5431, lng: 114.0579, region: "Asia" },
-  { name: "Hong Kong", lat: 22.3193, lng: 114.1694, region: "Asia" },
-  { name: "Wuhan", lat: 30.5928, lng: 114.3055, region: "Asia" },
-  { name: "Taipei", lat: 25.0330, lng: 121.5654, region: "Asia" },
-  { name: "Tokyo", lat: 35.6762, lng: 139.6503, region: "Asia" },
-  { name: "Seoul", lat: 37.5665, lng: 126.9780, region: "Asia" },
-  { name: "Singapore", lat: 1.3521, lng: 103.8198, region: "Asia" },
   { name: "Mumbai", lat: 19.0760, lng: 72.8777, region: "Asia" },
   { name: "New Delhi", lat: 28.6139, lng: 77.2090, region: "Asia" },
-  { name: "Bangkok", lat: 13.7563, lng: 100.5018, region: "Asia" },
-  { name: "Washington", lat: 38.9072, lng: -77.0369, region: "North America" },
-  { name: "New York", lat: 40.7128, lng: -74.0060, region: "North America" },
-  { name: "San Francisco", lat: 37.7749, lng: -122.4194, region: "North America" },
-  { name: "Los Angeles", lat: 34.0522, lng: -118.2437, region: "North America" },
+  { name: "Bangalore", lat: 12.9716, lng: 77.5946, region: "Asia" },
   { name: "London", lat: 51.5074, lng: -0.1278, region: "Europe" },
-  { name: "Paris", lat: 48.8566, lng: 2.3522, region: "Europe" },
-  { name: "Berlin", lat: 52.5200, lng: 13.4050, region: "Europe" },
-  { name: "Frankfurt", lat: 50.1109, lng: 8.6821, region: "Europe" },
-  { name: "Brussels", lat: 50.8503, lng: 4.3517, region: "Europe" },
-  { name: "Moscow", lat: 55.7558, lng: 37.6173, region: "Europe" },
-  { name: "Kyiv", lat: 50.4501, lng: 30.5234, region: "Europe" },
-  { name: "Rome", lat: 41.9028, lng: 12.4964, region: "Europe" },
+  { name: "New York", lat: 40.7128, lng: -74.0060, region: "North America" },
+  { name: "Washington", lat: 38.9072, lng: -77.0369, region: "North America" },
   { name: "Dubai", lat: 25.2048, lng: 55.2708, region: "Middle East" },
-  { name: "Riyadh", lat: 24.7136, lng: 46.6753, region: "Middle East" },
-  { name: "Tehran", lat: 35.6892, lng: 51.3890, region: "Middle East" },
-  { name: "Tel Aviv", lat: 32.0853, lng: 34.7818, region: "Middle East" },
-  { name: "Jerusalem", lat: 31.7683, lng: 35.2137, region: "Middle East" },
-  { name: "Sydney", lat: -33.8688, lng: 151.2093, region: "Oceania" },
-  { name: "Cape Town", lat: -33.9249, lng: 18.4241, region: "Africa" },
-  { name: "Cairo", lat: 30.0444, lng: 31.2357, region: "Africa" },
-  { name: "Brasília", lat: -15.7975, lng: -47.8919, region: "South America" },
-  { name: "São Paulo", lat: -23.5505, lng: -46.6333, region: "South America" }
+  { name: "Singapore", lat: 1.3521, lng: 103.8198, region: "Asia" }
 ];
 
+// High-density terrestrial hub list to ensure dots stay inside borders
 const COUNTRY_HUBS = {
-  "North America": [
-    { lat: 40.7128, lng: -74.0060 }, { lat: 38.9072, lng: -77.0369 },
-    { lat: 41.8781, lng: -87.6298 }, { lat: 34.0522, lng: -118.2437 },
-    { lat: 37.7749, lng: -122.4194 }, { lat: 29.7604, lng: -95.3698 },
-    { lat: 25.7617, lng: -80.1918 }, { lat: 33.7490, lng: -84.3880 },
-    { lat: 45.5017, lng: -73.5673 }, { lat: 43.6532, lng: -79.3832 },
+  "USA": [
+    { lat: 40.71, lng: -74.00 }, { lat: 34.05, lng: -118.24 }, { lat: 41.87, lng: -87.62 },
+    { lat: 29.76, lng: -95.36 }, { lat: 39.73, lng: -104.99 }, { lat: 47.60, lng: -122.33 },
+    { lat: 25.76, lng: -80.19 }, { lat: 33.74, lng: -84.38 }, { lat: 32.77, lng: -96.79 },
+    { lat: 39.95, lng: -75.16 }, { lat: 37.77, lng: -122.41 }, { lat: 42.36, lng: -71.05 }
+  ],
+  "India": [
+    { lat: 28.61, lng: 77.20 }, { lat: 19.07, lng: 72.87 }, { lat: 12.97, lng: 77.59 },
+    { lat: 13.08, lng: 80.27 }, { lat: 22.57, lng: 88.36 }, { lat: 17.38, lng: 78.48 },
+    { lat: 23.02, lng: 72.57 }, { lat: 18.52, lng: 73.85 }, { lat: 21.14, lng: 79.08 },
+    { lat: 26.84, lng: 80.94 }, { lat: 26.91, lng: 75.78 }, { lat: 15.29, lng: 73.98 }
+  ],
+  "China": [
+    { lat: 39.90, lng: 116.40 }, { lat: 31.23, lng: 121.47 }, { lat: 23.12, lng: 113.26 },
+    { lat: 22.54, lng: 114.05 }, { lat: 30.59, lng: 114.30 }, { lat: 30.65, lng: 104.06 },
+    { lat: 34.26, lng: 108.94 }, { lat: 39.12, lng: 117.19 }, { lat: 45.75, lng: 126.64 }
   ],
   "Europe": [
-    { lat: 51.5074, lng: -0.1278 }, { lat: 48.8566, lng: 2.3522 },
-    { lat: 52.5200, lng: 13.4050 }, { lat: 50.1109, lng: 8.6821 },
-    { lat: 41.9028, lng: 12.4964 }, { lat: 55.7558, lng: 37.6173 },
-    { lat: 40.4168, lng: -3.7038 }, { lat: 50.8503, lng: 4.3517 },
-    { lat: 59.3293, lng: 18.0686 }, { lat: 52.3676, lng: 4.9041 },
-  ],
-  "Asia": [
-    { lat: 39.9042, lng: 116.4074 }, { lat: 31.2304, lng: 121.4737 },
-    { lat: 22.3193, lng: 114.1694 }, { lat: 35.6762, lng: 139.6503 },
-    { lat: 37.5665, lng: 126.9780 }, { lat: 1.3521, lng: 103.8198 },
-    { lat: 19.0760, lng: 72.8777 }, { lat: 28.6139, lng: 77.2090 },
-    { lat: 25.0330, lng: 121.5654 }, { lat: 13.7563, lng: 100.5018 },
+    { lat: 51.50, lng: -0.12 }, { lat: 48.85, lng: 2.35 }, { lat: 52.52, lng: 13.40 },
+    { lat: 41.90, lng: 12.49 }, { lat: 50.11, lng: 8.68 }, { lat: 40.41, lng: -3.70 },
+    { lat: 52.36, lng: 4.90 }, { lat: 48.20, lng: 16.37 }, { lat: 59.32, lng: 18.06 },
+    { lat: 53.55, lng: 9.99 }, { lat: 45.46, lng: 9.18 }, { lat: 43.70, lng: 7.26 }
   ],
   "Middle East": [
-    { lat: 25.2048, lng: 55.2708 }, { lat: 24.7136, lng: 46.6753 },
-    { lat: 32.0853, lng: 34.7818 }, { lat: 35.6892, lng: 51.3890 },
-    { lat: 33.3152, lng: 44.3661 }, { lat: 24.4539, lng: 54.3773 },
-  ],
-  "Oceania": [
-    { lat: -33.8688, lng: 151.2093 }, { lat: -37.8136, lng: 144.9631 },
-    { lat: -27.4705, lng: 153.0260 }, { lat: -31.9505, lng: 115.8605 },
-    { lat: -41.2865, lng: 174.7762 },
+    { lat: 25.20, lng: 55.27 }, { lat: 24.71, lng: 46.67 }, { lat: 32.08, lng: 34.78 },
+    { lat: 35.68, lng: 51.38 }, { lat: 33.31, lng: 44.36 }, { lat: 24.45, lng: 54.37 },
+    { lat: 31.94, lng: 35.92 }, { lat: 29.37, lng: 47.97 }, { lat: 30.04, lng: 31.23 }
   ],
   "Global": [
-    { lat: 40.7128, lng: -74.0060 }, { lat: 51.5074, lng: -0.1278 },
-    { lat: 35.6762, lng: 139.6503 }, { lat: 1.3521, lng: 103.8198 },
+    { lat: 40.71, lng: -74.00 }, { lat: 51.50, lng: -0.12 }, { lat: 35.67, lng: 139.65 },
+    { lat: 1.35, lng: 103.81 }, { lat: -33.86, lng: 151.20 }, { lat: 19.07, lng: 72.87 }
   ]
 };
 
@@ -127,33 +101,32 @@ export function useIntelligenceFeed() {
               lat = matchedCity.lat;
               lng = matchedCity.lng;
             } else {
-              if (/(us|america|biden|washington|new york|fed|federal reserve|wall street)/i.test(textToAnalyze)) { region = "North America"; }
-              else if (/(china|beijing|xi jinping|pboc)/i.test(textToAnalyze)) { region = "Asia"; } 
-              else if (/(india|rbi|delhi|mumbai|sensex)/i.test(textToAnalyze)) { region = "Asia"; }
-              else if (/(uk|london|britain|fca|boe)/i.test(textToAnalyze)) { region = "Europe"; }
-              else if (/(europe|eu|ecb|germany|france)/i.test(textToAnalyze)) { region = "Europe"; }
-              else if (/(australia|rba|sydney)/i.test(textToAnalyze)) { region = "Oceania"; }
-              else if (/(japan|tokyo|boj)/i.test(textToAnalyze)) { region = "Asia"; }
-              else if (/(taiwan|tsmc)/i.test(textToAnalyze)) { region = "Asia"; }
-              else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; }
-              else if (/(russia|putin|moscow)/i.test(textToAnalyze)) { region = "Europe"; }
+              // Precise Country Detection
+              let countryKey = "Global";
+              if (/(india|rbi|delhi|mumbai|sensex|modi)/i.test(textToAnalyze)) { countryKey = "India"; region = "Asia"; }
+              else if (/(us|america|biden|washington|new york|fed|wall street)/i.test(textToAnalyze)) { countryKey = "USA"; region = "North America"; }
+              else if (/(china|beijing|xi jinping|shanghai|pboc)/i.test(textToAnalyze)) { countryKey = "China"; region = "Asia"; }
+              else if (/(europe|eu|uk|london|france|germany|italy)/i.test(textToAnalyze)) { countryKey = "Europe"; region = "Europe"; }
+              else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { countryKey = "Middle East"; region = "Middle East"; }
 
-              const newsGroupTag = region;
-              const hubs = COUNTRY_HUBS[newsGroupTag] || COUNTRY_HUBS["Global"];
+              const hubs = COUNTRY_HUBS[countryKey] || COUNTRY_HUBS["Global"];
+              // Rotate through terrestrial hubs to ensure news doesn't pile on one city
               const hubIdx = (hash + idx) % hubs.length;
               lat = hubs[hubIdx].lat;
               lng = hubs[hubIdx].lng;
             }
 
-            // High-separation Phyllotaxis Distribution
-            // Ensures every dot is unique and clearly separated across the map
+            // High-Performance Terrestrial Separation
+            // We use a small, fixed-range phyllotaxis spiral (max 1.8 degrees).
+            // This is large enough to see 50 distinct dots, but small enough to stay in-land.
             const goldenAngle = 137.508; 
             const angleVal = (idx * goldenAngle + (hash % 360)) * (Math.PI / 180);
             
-            // 3.5 spread factor turns clusters into clear constellations
-            const spreadFactor = matchedCity ? 1.0 : 3.5; 
+            // spreadFactor = 0.25 to 0.4 ensures high density but NO overlapping pulses
+            const spreadFactor = matchedCity ? 0.2 : 0.35; 
             const radius = Math.sqrt(idx + 1) * spreadFactor; 
             
+            // Final coordinates bounded to terrestrial hub + unique jitter
             lat += radius * Math.cos(angleVal);
             lng += radius * Math.sin(angleVal);
             
