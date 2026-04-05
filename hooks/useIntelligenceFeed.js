@@ -62,6 +62,44 @@ const CITIES = [
   { name: "São Paulo", lat: -23.5505, lng: -46.6333, region: "South America" }
 ];
 
+const COUNTRY_HUBS = {
+  "North America": [
+    { lat: 40.7128, lng: -74.0060 }, { lat: 38.9072, lng: -77.0369 },
+    { lat: 41.8781, lng: -87.6298 }, { lat: 34.0522, lng: -118.2437 },
+    { lat: 37.7749, lng: -122.4194 }, { lat: 29.7604, lng: -95.3698 },
+    { lat: 25.7617, lng: -80.1918 }, { lat: 33.7490, lng: -84.3880 },
+    { lat: 45.5017, lng: -73.5673 }, { lat: 43.6532, lng: -79.3832 },
+  ],
+  "Europe": [
+    { lat: 51.5074, lng: -0.1278 }, { lat: 48.8566, lng: 2.3522 },
+    { lat: 52.5200, lng: 13.4050 }, { lat: 50.1109, lng: 8.6821 },
+    { lat: 41.9028, lng: 12.4964 }, { lat: 55.7558, lng: 37.6173 },
+    { lat: 40.4168, lng: -3.7038 }, { lat: 50.8503, lng: 4.3517 },
+    { lat: 59.3293, lng: 18.0686 }, { lat: 52.3676, lng: 4.9041 },
+  ],
+  "Asia": [
+    { lat: 39.9042, lng: 116.4074 }, { lat: 31.2304, lng: 121.4737 },
+    { lat: 22.3193, lng: 114.1694 }, { lat: 35.6762, lng: 139.6503 },
+    { lat: 37.5665, lng: 126.9780 }, { lat: 1.3521, lng: 103.8198 },
+    { lat: 19.0760, lng: 72.8777 }, { lat: 28.6139, lng: 77.2090 },
+    { lat: 25.0330, lng: 121.5654 }, { lat: 13.7563, lng: 100.5018 },
+  ],
+  "Middle East": [
+    { lat: 25.2048, lng: 55.2708 }, { lat: 24.7136, lng: 46.6753 },
+    { lat: 32.0853, lng: 34.7818 }, { lat: 35.6892, lng: 51.3890 },
+    { lat: 33.3152, lng: 44.3661 }, { lat: 24.4539, lng: 54.3773 },
+  ],
+  "Oceania": [
+    { lat: -33.8688, lng: 151.2093 }, { lat: -37.8136, lng: 144.9631 },
+    { lat: -27.4705, lng: 153.0260 }, { lat: -31.9505, lng: 115.8605 },
+    { lat: -41.2865, lng: 174.7762 },
+  ],
+  "Global": [
+    { lat: 40.7128, lng: -74.0060 }, { lat: 51.5074, lng: -0.1278 },
+    { lat: 35.6762, lng: 139.6503 }, { lat: 1.3521, lng: 103.8198 },
+  ]
+};
+
 export function useIntelligenceFeed() {
   const [events, setEvents] = useState(INITIAL_EVENTS);
 
@@ -78,74 +116,19 @@ export function useIntelligenceFeed() {
             const hash = hashString(article.title || "");
             const textToAnalyze = (article.title + " " + (article.description || "")).toLowerCase();
             
-            // Check for exact city match
             const matchedCity = CITIES.find(c => textToAnalyze.includes(c.name.toLowerCase()));
             
             let region = "Global";
             let lat = 0;
             let lng = 0;
 
-            const COUNTRY_HUBS = {
-              "North America": [
-                { lat: 40.7128, lng: -74.0060 }, // NY
-                { lat: 38.9072, lng: -77.0369 }, // DC
-                { lat: 41.8781, lng: -87.6298 }, // Chicago
-                { lat: 34.0522, lng: -118.2437 }, // LA
-                { lat: 37.7749, lng: -122.4194 }, // SF
-                { lat: 29.7604, lng: -95.3698 }, // Houston
-                { lat: 25.7617, lng: -80.1918 }, // Miami
-                { lat: 47.6062, lng: -122.3321 }, // Seattle
-                { lat: 39.7392, lng: -104.9903 }, // Denver
-              ],
-              "Europe": [
-                { lat: 51.5074, lng: -0.1278 }, // London
-                { lat: 48.8566, lng: 2.3522 }, // Paris
-                { lat: 52.5200, lng: 13.4050 }, // Berlin
-                { lat: 50.1109, lng: 8.6821 }, // Frankfurt
-                { lat: 41.9028, lng: 12.4964 }, // Rome
-                { lat: 55.7558, lng: 37.6173 }, // Moscow
-                { lat: 40.4168, lng: -3.7038 }, // Madrid
-                { lat: 50.8503, lng: 4.3517 }, // Brussels
-              ],
-              "Asia": [
-                { lat: 39.9042, lng: 116.4074 }, // Beijing
-                { lat: 31.2304, lng: 121.4737 }, // Shanghai
-                { lat: 22.3193, lng: 114.1694 }, // HK
-                { lat: 35.6762, lng: 139.6503 }, // Tokyo
-                { lat: 37.5665, lng: 126.9780 }, // Seoul
-                { lat: 1.3521, lng: 103.8198 }, // Singapore
-                { lat: 19.0760, lng: 72.8777 }, // Mumbai
-                { lat: 28.6139, lng: 77.2090 }, // Delhi
-                { lat: 25.0330, lng: 121.5654 }, // Taipei
-              ],
-              "Middle East": [
-                { lat: 25.2048, lng: 55.2708 }, // Dubai
-                { lat: 24.7136, lng: 46.6753 }, // Riyadh
-                { lat: 32.0853, lng: 34.7818 }, // Tel Aviv
-                { lat: 35.6892, lng: 51.3890 }, // Tehran
-              ],
-              "Oceania": [
-                { lat: -33.8688, lng: 151.2093 }, // Sydney
-                { lat: -37.8136, lng: 144.9631 }, // Melbourne
-                { lat: -27.4705, lng: 153.0260 }, // Brisbane
-                { lat: -31.9505, lng: 115.8605 }, // Perth
-              ],
-              "Global": [
-                { lat: 40.7128, lng: -74.0060 }, // NY
-                { lat: 51.5074, lng: -0.1278 }, // London
-                { lat: 35.6762, lng: 139.6503 }, // Tokyo
-                { lat: 1.3521, lng: 103.8198 }, // Singapore
-              ]
-            };
-
             if (matchedCity) {
               region = matchedCity.region;
               lat = matchedCity.lat;
               lng = matchedCity.lng;
             } else {
-              // Map to general regions based on sentiment/names
               if (/(us|america|biden|washington|new york|fed|federal reserve|wall street)/i.test(textToAnalyze)) { region = "North America"; }
-              else if (/(china|beijing|xi jinping|pboc)/i.test(textToAnalyze)) { region = "Asia"; } // Route exclusively through Asia hubs config
+              else if (/(china|beijing|xi jinping|pboc)/i.test(textToAnalyze)) { region = "Asia"; } 
               else if (/(india|rbi|delhi|mumbai|sensex)/i.test(textToAnalyze)) { region = "Asia"; }
               else if (/(uk|london|britain|fca|boe)/i.test(textToAnalyze)) { region = "Europe"; }
               else if (/(europe|eu|ecb|germany|france)/i.test(textToAnalyze)) { region = "Europe"; }
@@ -155,33 +138,33 @@ export function useIntelligenceFeed() {
               else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; }
               else if (/(russia|putin|moscow)/i.test(textToAnalyze)) { region = "Europe"; }
 
-              // Randomly sample one of the inner-border major cities for that specific region
-              const hubs = COUNTRY_HUBS[region] || COUNTRY_HUBS["Global"];
-              const hub = hubs[hash % hubs.length];
-              lat = hub.lat;
-              lng = hub.lng;
+              const newsGroupTag = region;
+              const hubs = COUNTRY_HUBS[newsGroupTag] || COUNTRY_HUBS["Global"];
+              const hubIdx = (hash + idx) % hubs.length;
+              lat = hubs[hubIdx].lat;
+              lng = hubs[hubIdx].lng;
             }
 
-            // Guaranteed visual separation: 
-            // 1.2 degrees is large enough to see distinct dots but small enough to stay within large country borders (like USA/China).
-            // We use both the title hash AND the article index (idx) to ensure every single dot has a unique offset.
-            const uniqueSeed = hash + idx;
-            const angle = (uniqueSeed % 360) * (Math.PI / 180);
-            const r = 0.3 + ((uniqueSeed >> 2) % 100) / 100 * 0.9; // Minimum 0.3 deg, max 1.2 deg
+            // High-separation Phyllotaxis Distribution
+            // Ensures every dot is unique and clearly separated across the map
+            const goldenAngle = 137.508; 
+            const angleVal = (idx * goldenAngle + (hash % 360)) * (Math.PI / 180);
             
-            lat += r * Math.cos(angle);
-            lng += r * Math.sin(angle);
+            // 3.5 spread factor turns clusters into clear constellations
+            const spreadFactor = matchedCity ? 1.0 : 3.5; 
+            const radius = Math.sqrt(idx + 1) * spreadFactor; 
             
-            // Infer Sentiment
+            lat += radius * Math.cos(angleVal);
+            lng += radius * Math.sin(angleVal);
+            
             let sentiment = "neutral";
             let bullish = 30;
             let bearish = 30;
             if (/(growth|surge|jump|gain|up|bull|positive|soar|buy|high)/i.test(textToAnalyze)) { sentiment = "bullish"; bullish = 75; bearish = 15; }
             else if (/(drop|fall|loss|down|bear|negative|plunge|crash|fear|sell|low|war|crisis)/i.test(textToAnalyze)) { sentiment = "bearish"; bearish = 80; bullish = 10; }
             
-            const impactScore = Math.floor(Math.random() * 40) + 60; // 60-99
+            const impactScore = Math.floor(Math.random() * 40) + 60;
             
-            // Determine affected asset
             let asset = "Global Index";
             if (/(oil|crude|energy)/i.test(textToAnalyze)) asset = "Crude Oil";
             else if (/(gold|silver)/i.test(textToAnalyze)) asset = "Gold";
@@ -194,16 +177,16 @@ export function useIntelligenceFeed() {
               timestamp: timeAgo(article.publishedAt),
               source: article.source?.toUpperCase() || "GLOBAL NEWS",
               tags: ["Live Update", region],
-              sentiment: sentiment,
-              impactScore: impactScore,
-              region: region,
+              sentiment,
+              impactScore,
+              region,
               coordinates: [lat, lng],
               description: article.description || "No further details available for this event.",
               impacts: [
                 { 
-                  asset: asset, 
-                  bullish: bullish, 
-                  bearish: bearish, 
+                  asset, 
+                  bullish, 
+                  bearish, 
                   neutral: 100 - bullish - bearish, 
                   reasoning: ["Real-time market analysis", "News sentiment parsing"] 
                 }
@@ -221,7 +204,7 @@ export function useIntelligenceFeed() {
     }
 
     loadNews();
-    const interval = setInterval(loadNews, 5 * 60 * 1000); // update every 5 minutes
+    const interval = setInterval(loadNews, 5 * 60 * 1000);
 
     return () => {
       mounted = false;
