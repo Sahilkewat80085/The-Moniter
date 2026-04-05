@@ -162,9 +162,12 @@ export function useIntelligenceFeed() {
               lng = hub.lng;
             }
 
-            // Sub-degree jitter (max ~30km) entirely prevents ocean-leakage while stopping z-fighting overlaps
-            const angle = (hash % 360) * (Math.PI / 180);
-            const r = ((hash >> 3) % 100) / 100 * 0.4;
+            // Guaranteed visual separation: 
+            // 1.2 degrees is large enough to see distinct dots but small enough to stay within large country borders (like USA/China).
+            // We use both the title hash AND the article index (idx) to ensure every single dot has a unique offset.
+            const uniqueSeed = hash + idx;
+            const angle = (uniqueSeed % 360) * (Math.PI / 180);
+            const r = 0.3 + ((uniqueSeed >> 2) % 100) / 100 * 0.9; // Minimum 0.3 deg, max 1.2 deg
             
             lat += r * Math.cos(angle);
             lng += r * Math.sin(angle);
