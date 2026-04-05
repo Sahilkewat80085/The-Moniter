@@ -85,41 +85,86 @@ export function useIntelligenceFeed() {
             let lat = 0;
             let lng = 0;
 
+            const COUNTRY_HUBS = {
+              "North America": [
+                { lat: 40.7128, lng: -74.0060 }, // NY
+                { lat: 38.9072, lng: -77.0369 }, // DC
+                { lat: 41.8781, lng: -87.6298 }, // Chicago
+                { lat: 34.0522, lng: -118.2437 }, // LA
+                { lat: 37.7749, lng: -122.4194 }, // SF
+                { lat: 29.7604, lng: -95.3698 }, // Houston
+                { lat: 25.7617, lng: -80.1918 }, // Miami
+                { lat: 47.6062, lng: -122.3321 }, // Seattle
+                { lat: 39.7392, lng: -104.9903 }, // Denver
+              ],
+              "Europe": [
+                { lat: 51.5074, lng: -0.1278 }, // London
+                { lat: 48.8566, lng: 2.3522 }, // Paris
+                { lat: 52.5200, lng: 13.4050 }, // Berlin
+                { lat: 50.1109, lng: 8.6821 }, // Frankfurt
+                { lat: 41.9028, lng: 12.4964 }, // Rome
+                { lat: 55.7558, lng: 37.6173 }, // Moscow
+                { lat: 40.4168, lng: -3.7038 }, // Madrid
+                { lat: 50.8503, lng: 4.3517 }, // Brussels
+              ],
+              "Asia": [
+                { lat: 39.9042, lng: 116.4074 }, // Beijing
+                { lat: 31.2304, lng: 121.4737 }, // Shanghai
+                { lat: 22.3193, lng: 114.1694 }, // HK
+                { lat: 35.6762, lng: 139.6503 }, // Tokyo
+                { lat: 37.5665, lng: 126.9780 }, // Seoul
+                { lat: 1.3521, lng: 103.8198 }, // Singapore
+                { lat: 19.0760, lng: 72.8777 }, // Mumbai
+                { lat: 28.6139, lng: 77.2090 }, // Delhi
+                { lat: 25.0330, lng: 121.5654 }, // Taipei
+              ],
+              "Middle East": [
+                { lat: 25.2048, lng: 55.2708 }, // Dubai
+                { lat: 24.7136, lng: 46.6753 }, // Riyadh
+                { lat: 32.0853, lng: 34.7818 }, // Tel Aviv
+                { lat: 35.6892, lng: 51.3890 }, // Tehran
+              ],
+              "Oceania": [
+                { lat: -33.8688, lng: 151.2093 }, // Sydney
+                { lat: -37.8136, lng: 144.9631 }, // Melbourne
+                { lat: -27.4705, lng: 153.0260 }, // Brisbane
+                { lat: -31.9505, lng: 115.8605 }, // Perth
+              ],
+              "Global": [
+                { lat: 40.7128, lng: -74.0060 }, // NY
+                { lat: 51.5074, lng: -0.1278 }, // London
+                { lat: 35.6762, lng: 139.6503 }, // Tokyo
+                { lat: 1.3521, lng: 103.8198 }, // Singapore
+              ]
+            };
+
             if (matchedCity) {
               region = matchedCity.region;
               lat = matchedCity.lat;
               lng = matchedCity.lng;
             } else {
-              // Contextual / Country Intelligence
-              if (/(us|america|biden|washington|new york|fed|federal reserve|wall street)/i.test(textToAnalyze)) { region = "North America"; lat = 40.7128; lng = -74.0060; }
-              else if (/(china|beijing|xi jinping|pboc)/i.test(textToAnalyze)) { region = "Asia"; lat = 39.9042; lng = 116.4074; }
-              else if (/(india|rbi|delhi|mumbai|sensex)/i.test(textToAnalyze)) { region = "Asia"; lat = 19.0760; lng = 72.8777; }
-              else if (/(uk|london|britain|fca|boe)/i.test(textToAnalyze)) { region = "Europe"; lat = 51.5074; lng = -0.1278; }
-              else if (/(europe|eu|ecb|germany|france)/i.test(textToAnalyze)) { region = "Europe"; lat = 50.1109; lng = 8.6821; } // Frankfurt
-              else if (/(australia|rba|sydney)/i.test(textToAnalyze)) { region = "Oceania"; lat = -33.8688; lng = 151.2093; }
-              else if (/(japan|tokyo|boj)/i.test(textToAnalyze)) { region = "Asia"; lat = 35.6762; lng = 139.6503; }
-              else if (/(taiwan|tsmc)/i.test(textToAnalyze)) { region = "Asia"; lat = 25.0330; lng = 121.5654; }
-              else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; lat = 25.2048; lng = 55.2708; }
-              else if (/(russia|putin|moscow)/i.test(textToAnalyze)) { region = "Europe"; lat = 55.7558; lng = 37.6173; }
-              else {
-                // If totally unknown, place it in one of the major global financial hubs
-                const hubs = [
-                  { lat: 40.7128, lng: -74.0060, reg: "North America" }, // NY
-                  { lat: 51.5074, lng: -0.1278, reg: "Europe" }, // London
-                  { lat: 1.3521, lng: 103.8198, reg: "Asia" }, // Singapore
-                ];
-                const hub = hubs[hash % hubs.length];
-                lat = hub.lat;
-                lng = hub.lng;
-                region = hub.reg;
-              }
+              // Map to general regions based on sentiment/names
+              if (/(us|america|biden|washington|new york|fed|federal reserve|wall street)/i.test(textToAnalyze)) { region = "North America"; }
+              else if (/(china|beijing|xi jinping|pboc)/i.test(textToAnalyze)) { region = "Asia"; } // Route exclusively through Asia hubs config
+              else if (/(india|rbi|delhi|mumbai|sensex)/i.test(textToAnalyze)) { region = "Asia"; }
+              else if (/(uk|london|britain|fca|boe)/i.test(textToAnalyze)) { region = "Europe"; }
+              else if (/(europe|eu|ecb|germany|france)/i.test(textToAnalyze)) { region = "Europe"; }
+              else if (/(australia|rba|sydney)/i.test(textToAnalyze)) { region = "Oceania"; }
+              else if (/(japan|tokyo|boj)/i.test(textToAnalyze)) { region = "Asia"; }
+              else if (/(taiwan|tsmc)/i.test(textToAnalyze)) { region = "Asia"; }
+              else if (/(middle east|israel|iran|dubai|saudi|oil)/i.test(textToAnalyze)) { region = "Middle East"; }
+              else if (/(russia|putin|moscow)/i.test(textToAnalyze)) { region = "Europe"; }
+
+              // Randomly sample one of the inner-border major cities for that specific region
+              const hubs = COUNTRY_HUBS[region] || COUNTRY_HUBS["Global"];
+              const hub = hubs[hash % hubs.length];
+              lat = hub.lat;
+              lng = hub.lng;
             }
 
-            // Distribute the dots radially around the target coordinates so they form a regional heat cluster instead of a single dense spike
-            // Exact city matches get a tight cluster; country/region matches get a wider 8-degree provincial scatter
-            const maxRadius = matchedCity ? 1.5 : 8.0; 
-            const angle = (hash % 360) * (Math.PI / 180); // 0 to 360 degrees
-            const r = ((hash >> 3) % 100) / 100 * maxRadius; // 0.0 to maxRadius
+            // Sub-degree jitter (max ~30km) entirely prevents ocean-leakage while stopping z-fighting overlaps
+            const angle = (hash % 360) * (Math.PI / 180);
+            const r = ((hash >> 3) % 100) / 100 * 0.4;
             
             lat += r * Math.cos(angle);
             lng += r * Math.sin(angle);
