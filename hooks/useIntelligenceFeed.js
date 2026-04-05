@@ -115,9 +115,14 @@ export function useIntelligenceFeed() {
               }
             }
 
-            // Micro-jitter to prevent z-fighting / exact stacking if multiple events hit the same city
-            lat += (hash % 10) * 0.15 * (hash % 2 === 0 ? 1 : -1);
-            lng += ((hash >> 1) % 10) * 0.15 * ((hash >> 2) % 2 === 0 ? 1 : -1);
+            // Distribute the dots radially around the target coordinates so they form a regional heat cluster instead of a single dense spike
+            // Exact city matches get a tight cluster; country/region matches get a wider 8-degree provincial scatter
+            const maxRadius = matchedCity ? 1.5 : 8.0; 
+            const angle = (hash % 360) * (Math.PI / 180); // 0 to 360 degrees
+            const r = ((hash >> 3) % 100) / 100 * maxRadius; // 0.0 to maxRadius
+            
+            lat += r * Math.cos(angle);
+            lng += r * Math.sin(angle);
             
             // Infer Sentiment
             let sentiment = "neutral";
