@@ -28,29 +28,29 @@ function timeAgo(publishedAt) {
 const CITIES = [
   { name: "Beijing", lat: 39.9042, lng: 116.4074, region: "Asia" },
   { name: "Shanghai", lat: 31.2304, lng: 121.4737, region: "Asia" },
-  { name: "Mumbai", lat: 19.0760, lng: 72.8777, region: "Asia" },
-  { name: "New Delhi", lat: 28.6139, lng: 77.2090, region: "Asia" },
-  { name: "Bangalore", lat: 12.9716, lng: 77.5946, region: "Asia" },
-  { name: "London", lat: 51.5074, lng: -0.1278, region: "Europe" },
-  { name: "New York", lat: 40.7128, lng: -74.0060, region: "North America" },
-  { name: "Washington", lat: 38.9072, lng: -77.0369, region: "North America" },
-  { name: "Dubai", lat: 25.2048, lng: 55.2708, region: "Middle East" },
-  { name: "Singapore", lat: 1.3521, lng: 103.8198, region: "Asia" }
+  { name: "Mumbai", lat: 19.15, lng: 73.00, region: "Asia" }, // Sunk slightly inland
+  { name: "New Delhi", lat: 28.61, lng: 77.21, region: "Asia" },
+  { name: "Bangalore", lat: 12.97, lng: 77.59, region: "Asia" },
+  { name: "London", lat: 51.51, lng: -0.11, region: "Europe" },
+  { name: "New York", lat: 40.73, lng: -74.15, region: "North America" }, // Shifts away from Atlantic
+  { name: "Washington", lat: 38.91, lng: -77.04, region: "North America" },
+  { name: "Dubai", lat: 25.15, lng: 55.40, region: "Middle East" }, // Sunk inland
+  { name: "Singapore", lat: 1.30, lng: 103.85, region: "Asia" }
 ];
 
 // High-density terrestrial hub list to ensure dots stay inside borders
 const COUNTRY_HUBS = {
   "USA": [
-    { lat: 40.71, lng: -74.00 }, { lat: 34.05, lng: -118.24 }, { lat: 41.87, lng: -87.62 },
+    { lat: 40.73, lng: -74.15 }, { lat: 34.05, lng: -118.24 }, { lat: 41.87, lng: -87.62 },
     { lat: 29.76, lng: -95.36 }, { lat: 39.73, lng: -104.99 }, { lat: 47.60, lng: -122.33 },
-    { lat: 25.76, lng: -80.19 }, { lat: 33.74, lng: -84.38 }, { lat: 32.77, lng: -96.79 },
-    { lat: 39.95, lng: -75.16 }, { lat: 37.77, lng: -122.41 }, { lat: 42.36, lng: -71.05 }
+    { lat: 25.76, lng: -80.25 }, { lat: 33.74, lng: -84.38 }, { lat: 32.77, lng: -96.79 },
+    { lat: 39.95, lng: -75.20 }, { lat: 37.77, lng: -122.41 }, { lat: 42.36, lng: -71.10 }
   ],
   "India": [
-    { lat: 28.61, lng: 77.20 }, { lat: 19.07, lng: 72.87 }, { lat: 12.97, lng: 77.59 },
-    { lat: 13.08, lng: 80.27 }, { lat: 22.57, lng: 88.36 }, { lat: 17.38, lng: 78.48 },
-    { lat: 23.02, lng: 72.57 }, { lat: 18.52, lng: 73.85 }, { lat: 21.14, lng: 79.08 },
-    { lat: 26.84, lng: 80.94 }, { lat: 26.91, lng: 75.78 }, { lat: 15.29, lng: 73.98 }
+    { lat: 28.61, lng: 77.20 }, { lat: 19.15, lng: 73.00 }, { lat: 12.97, lng: 77.59 },
+    { lat: 13.08, lng: 80.21 }, { lat: 22.57, lng: 88.36 }, { lat: 17.38, lng: 78.48 },
+    { lat: 23.02, lng: 72.60 }, { lat: 18.52, lng: 73.85 }, { lat: 21.14, lng: 79.08 },
+    { lat: 26.84, lng: 80.94 }, { lat: 26.91, lng: 75.80 }, { lat: 15.35, lng: 74.00 }
   ],
   "China": [
     { lat: 39.90, lng: 116.40 }, { lat: 31.23, lng: 121.47 }, { lat: 23.12, lng: 113.26 },
@@ -117,14 +117,14 @@ export function useIntelligenceFeed() {
             }
 
             // High-Performance Terrestrial Separation
-            // We use a small, fixed-range phyllotaxis spiral (max 1.8 degrees).
-            // This is large enough to see 50 distinct dots, but small enough to stay in-land.
+            // We use a tightened phyllotaxis spiral (max ~1.1 degrees).
             const goldenAngle = 137.508; 
             const angleVal = (idx * goldenAngle + (hash % 360)) * (Math.PI / 180);
             
-            // spreadFactor = 0.25 to 0.4 ensures high density but NO overlapping pulses
-            const spreadFactor = matchedCity ? 0.2 : 0.35; 
-            const radius = Math.sqrt(idx + 1) * spreadFactor; 
+            // Tightened spreadFactors ensure markers stay inland
+            const spreadFactor = matchedCity ? 0.12 : 0.22; 
+            // Cap the radius to prevent dots from drifting into oceans
+            const radius = Math.min(Math.sqrt(idx + 1) * spreadFactor, 1.1); 
             
             // Final coordinates bounded to terrestrial hub + unique jitter
             lat += radius * Math.cos(angleVal);
