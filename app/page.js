@@ -7,6 +7,7 @@ import EventCard from "../components/EventCard";
 import ImpactCard from "../components/ImpactCard";
 import EventNewsBlog from "../components/EventNewsBlog";
 import NewsFeed from "../components/NewsFeed";
+import NotificationMarquee from "../components/NotificationMarquee";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
 // Dynamic import prevents Three.js from running during SSR
@@ -65,6 +66,9 @@ export default function Dashboard() {
             <span className="text-[10px] font-bold text-positive tracking-widest">LIVE</span>
           </div>
         </div>
+        
+        {/* Animated Headline Marquee */}
+        <NotificationMarquee events={events} />
 
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4 scrollbar-hide">
           {events.map((event) => (
