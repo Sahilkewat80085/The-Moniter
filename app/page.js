@@ -72,7 +72,11 @@ export default function Dashboard() {
 
         {/* Vertical Animated Headline Marquee */}
         <div className="flex-1 overflow-hidden px-4 py-4 flex flex-col">
-          <NotificationMarquee events={events} />
+          <NotificationMarquee 
+            events={events} 
+            onSelect={handleCardClick}
+            selectedEventId={selectedEventId}
+          />
         </div>
 
       </section>
