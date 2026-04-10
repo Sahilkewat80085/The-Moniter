@@ -56,11 +56,8 @@ export default function Dashboard() {
   const handleClose = () => setSelectedEventId(null);
 
   return (
-    <div className="flex flex-col h-full w-full bg-background overflow-hidden">
-      <NotificationMarquee events={events} />
-      
-      <div className="flex flex-1 overflow-hidden">
-        {/* ── Left Panel: Event Feed ─────────────────────────────────────── */}
+    <div className="flex h-full w-full bg-background overflow-hidden">
+      {/* ── Left Panel: Event Feed ─────────────────────────────────────── */}
       <section className="w-80 border-r border-border flex flex-col bg-panel/80 flex-shrink-0">
         <div className="p-4 border-b border-border flex justify-between items-center bg-panel/50 backdrop-blur-sm">
           <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Notifications</h2>
@@ -73,15 +70,9 @@ export default function Dashboard() {
         {/* Animated Headline Marquee */}
 
 
-        <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4 scrollbar-hide">
-          {events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              isActive={event.id === selectedEventId}
-              onClick={handleCardClick}
-            />
-          ))}
+        {/* Vertical Animated Headline Marquee */}
+        <div className="flex-1 overflow-hidden px-4 py-4 flex flex-col">
+          <NotificationMarquee events={events} />
         </div>
 
       </section>
@@ -194,7 +185,6 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
-      </div>
     </div>
   );
 }

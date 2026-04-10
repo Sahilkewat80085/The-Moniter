@@ -27,40 +27,39 @@ export default function NotificationMarquee({ events }) {
 
   return (
     <div 
-      className="w-full bg-panel/80 backdrop-blur-md border-b border-border py-2.5 overflow-hidden shadow-sm"
+      className="w-full flex-1 overflow-hidden relative"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       <div 
-        className={`flex items-center whitespace-nowrap will-change-transform ${isPaused ? "paused" : ""}`}
+        className={`flex flex-col w-full will-change-transform ${isPaused ? "paused" : ""}`}
         style={{
-          animation: "tickerScroll 180s linear infinite",
+          animation: "tickerScrollVertical 120s linear infinite",
           display: "flex",
-          width: "max-content",
+          height: "max-content",
         }}
       >
         {items.map((event, index) => (
           <div 
             key={`${event.id}-${index}`}
-            className="flex flex-col justify-center px-10 border-r border-border/30 last:border-r-0"
+            className="p-3 mb-4 intelligence-card rounded-lg border border-border/60 bg-panel/30 transition-all flex flex-col gap-1.5 mx-0.5"
           >
-            <div className="flex items-center gap-2 mb-1">
-              <span 
-                className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]"
-                style={{ backgroundColor: sentimentToColor(event.sentiment) }}
-              />
-              <span className="text-[9px] font-black text-info uppercase tracking-[0.2em]">
-                {event.region}
-              </span>
-              <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">
-                ID: {event.id}
-              </span>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+                  style={{ backgroundColor: sentimentToColor(event.sentiment) }}
+                />
+                <span className="text-[9px] font-mono text-slate-500 uppercase tracking-tight">
+                  {event.timestamp || "RECENT"} | {event.source || event.region}
+                </span>
+              </div>
+              <span className="text-[8px] font-mono text-slate-600">ID:{event.id}</span>
             </div>
             
-            <div className="text-[12px] font-bold text-foreground tracking-tight uppercase italic flex items-center gap-3">
-              <span>{event.title}</span>
-              <span className="text-slate-800 dark:text-slate-700 font-black tracking-[0.3em] opacity-30">///</span>
-            </div>
+            <h4 className="text-[11px] font-bold text-slate-200 leading-snug uppercase tracking-tight line-clamp-2 italic">
+              {event.title}
+            </h4>
           </div>
         ))}
       </div>
