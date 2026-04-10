@@ -27,14 +27,14 @@ export default function NotificationMarquee({ events }) {
 
   return (
     <div 
-      className="w-full bg-panel/30 border-b border-border py-1.5 overflow-hidden"
+      className="w-full bg-panel/80 backdrop-blur-md border-b border-border py-2.5 overflow-hidden shadow-sm"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       <div 
         className={`flex items-center whitespace-nowrap will-change-transform ${isPaused ? "paused" : ""}`}
         style={{
-          animation: "tickerScroll 60s linear infinite",
+          animation: "tickerScroll 180s linear infinite",
           display: "flex",
           width: "max-content",
         }}
@@ -42,19 +42,25 @@ export default function NotificationMarquee({ events }) {
         {items.map((event, index) => (
           <div 
             key={`${event.id}-${index}`}
-            className="flex items-center px-6"
+            className="flex flex-col justify-center px-10 border-r border-border/30 last:border-r-0"
           >
-            <span 
-              className="w-1.5 h-1.5 rounded-full mr-3 shadow-[0_0_8px_rgba(0,0,0,0.5)]"
-              style={{ backgroundColor: sentimentToColor(event.sentiment) }}
-            />
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-2">
-              [{event.region}]
-            </span>
-            <span className="text-[11px] font-semibold text-foreground tracking-tight uppercase italic">
-              {event.title}
-            </span>
-            <span className="mx-6 text-slate-800 dark:text-slate-700 font-black tracking-[0.3em]">///</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span 
+                className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]"
+                style={{ backgroundColor: sentimentToColor(event.sentiment) }}
+              />
+              <span className="text-[9px] font-black text-info uppercase tracking-[0.2em]">
+                {event.region}
+              </span>
+              <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">
+                ID: {event.id}
+              </span>
+            </div>
+            
+            <div className="text-[12px] font-bold text-foreground tracking-tight uppercase italic flex items-center gap-3">
+              <span>{event.title}</span>
+              <span className="text-slate-800 dark:text-slate-700 font-black tracking-[0.3em] opacity-30">///</span>
+            </div>
           </div>
         ))}
       </div>
