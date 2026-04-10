@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 /**
  * NotificationMarquee.js
@@ -9,7 +9,9 @@ import React, { useState } from "react";
  * Scrolling through headlines with a professional intelligence aesthetic.
  */
 export default function NotificationMarquee({ events, onSelect, selectedEventId }) {
+  const containerRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
+  const animationRef = useRef(null);
 
   if (!events || events.length === 0) return null;
 
@@ -25,20 +27,43 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
     }
   };
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const scroll = () => {
+      if (!isPaused) {
+        container.scrollTop += 0.5; // Very slow crawl
+        
+        // Reset to top once we've reached halfway through the duplicated list
+        if (container.scrollTop >= container.scrollHeight / 2) {
+          container.scrollTop = 0;
+        }
+      }
+      animationRef.current = requestAnimationFrame(scroll);
+    };
+
+    animationRef.current = requestAnimationFrame(scroll);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPaused, items.length]);
+
   return (
     <div 
-      className="w-full flex-1 overflow-hidden relative"
+      ref={containerRef}
+      className="w-full h-full overflow-y-auto custom-scrollbar relative"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      style={{
+        scrollbarWidth: 'none', // Hide default scrollbar for cleaner look
+        msOverflowStyle: 'none'
+      }}
     >
-      <div 
-        className={`flex flex-col w-full will-change-transform ${isPaused ? "paused" : ""}`}
-        style={{
-          animation: "tickerScrollVertical 120s linear infinite",
-          display: "flex",
-          height: "max-content",
-        }}
-      >
+      <div className="flex flex-col w-full min-h-full py-4">
         {items.map((event, index) => {
           const isActive = event.id === selectedEventId;
           return (
