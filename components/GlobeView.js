@@ -204,11 +204,11 @@ function EarthSphere({ performanceMode }) {
       {/* Atmospheric layers — disabled in high-perf mode to save overdraw */}
       {!isHighPerf && (
         <>
-          <mesh ref={glowRef}>
+          <mesh ref={glowRef} raycast={() => null}>
             <sphereGeometry args={[GLOBE_RADIUS * 1.06, 32, 32]} />
             <meshBasicMaterial color="#1a4a8e" transparent opacity={0.13} depthWrite={false} />
           </mesh>
-          <mesh ref={rimRef}>
+          <mesh ref={rimRef} raycast={() => null}>
             <sphereGeometry args={[GLOBE_RADIUS * 1.035, res, res]} />
             <meshBasicMaterial color="#3b82f6" transparent opacity={0.08} depthWrite={false} side={THREE.BackSide} />
           </mesh>
@@ -525,6 +525,7 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
         ref={meshRef}
         args={[null, null, count]}
         onPointerOver={(e) => {
+          e.stopPropagation();
           const idx = e.instanceId;
           const data = markerData[idx];
           if (data) {
@@ -532,18 +533,20 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
             document.body.style.cursor = "pointer";
           }
         }}
-        onPointerOut={() => {
+        onPointerOut={(e) => {
+          e.stopPropagation();
           onHoverEvent(null);
           document.body.style.cursor = "auto";
         }}
         onClick={(e) => {
+          e.stopPropagation();
           const idx = e.instanceId;
           const data = markerData[idx];
           if (data) onSelectEvent(data.event);
         }}
       >
-        <sphereGeometry args={[0.016, 8, 8]} />
-        <meshBasicMaterial />
+        <sphereGeometry args={[0.025, 12, 12]} />
+        <meshBasicMaterial vertexColors />
       </instancedMesh>
 
       {/* Pulse rings — only in quality mode or simplified in high-perf */}
