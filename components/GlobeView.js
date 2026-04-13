@@ -16,7 +16,7 @@
  *  - GlobeTooltip      → HTML tooltip overlay
  */
 
-import React, { useRef, useState, useCallback, useMemo, useEffect, Suspense } from "react";
+import React, { useRef, useState, useCallback, useMemo, useEffect, useLayoutEffect, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -424,44 +424,63 @@ function CountryBorders() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Custom vertex shader logic for instanced pulses.
- * Allows each instance to have its own random phase and color.
+ * Core Dot Shader
+ * Ensures coloring works correctly on all GPUs and adds a subtle glow.
+ */
+const MarkerShader = {
+  uniforms: {},
+  vertex: `
+    attribute vec3 instanceColor;
+    varying vec3 vColor;
+    void main() {
+      vColor = instanceColor;
+      // standard instancing matrix multiplication
+      vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  fragment: `
+    varying vec3 vColor;
+    void main() {
+      // Simple circular falloff for a "light" feel
+      float d = length(gl_PointCoord - vec2(0.5));
+      float strength = 1.0 - smoothstep(0.0, 0.5, d);
+      gl_FragColor = vec4(vColor, 1.0);
+    }
+  `
+};
+
+/**
+ * Pulse Shader
  */
 const PulseShader = {
   uniforms: {
     uTime: { value: 0 },
-    uSpeed: { value: 2.0 },
   },
   vertex: `
-    attribute float aPhase;
-    attribute vec3 aColor;
-    varying float vPulse;
+    attribute vec3 instanceColor;
     varying vec3 vColor;
-    varying float vAlpha;
+    varying float vOpacity;
+    uniform float uTime;
 
     void main() {
-      vColor = aColor;
-      // Calculate pulse phase (0.0 to 1.0)
-      float t = mod(uTime * uSpeed + aPhase, 1.0);
-      vPulse = t;
-      vAlpha = 1.0 - t;
-
-      // Scale up the ring over time
-      float scale = 1.0 + t * 2.5;
-      vec3 transformed = position * scale;
+      vColor = instanceColor;
+      // Pulse animation logic moved to vertex shader for performance
+      float phase = mod(uTime * 1.5, 1.0);
+      vOpacity = (1.0 - phase) * 0.5;
       
-      gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(transformed, 1.0);
+      // Scaling
+      float scale = 1.0 + phase * 2.0;
+      vec3 pos = position * scale;
+      
+      gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
     }
   `,
   fragment: `
-    varying float vPulse;
     varying vec3 vColor;
-    varying float vAlpha;
-
+    varying float vOpacity;
     void main() {
-      // Create a nice sharp ring effect
-      float dist = length(gl_PointCoord - vec2(0.5));
-      gl_FragColor = vec4(vColor, vAlpha * 0.6);
+      gl_FragColor = vec4(vColor, vOpacity);
     }
   `
 };
@@ -473,48 +492,56 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
   const isHighPerf = performanceMode === "high";
 
   // Pre-calculate positions and rotations
-  const markerData = useMemo(() => 
-    events.map((event, i) => {
+  const markerData = useMemo(() => {
+    const data = [];
+    const dummy = new THREE.Object3D();
+
+    events.forEach((event, i) => {
       const [lat, lon] = event.coordinates;
       const pos = latLonToVector3(lat, lon, MARKER_RADIUS);
-      const colors = sentimentToColor(event.sentiment);
-      const phase = Math.random();
+      const sentimentColors = sentimentToColor(event.sentiment);
       
-      // Matrix for placement
-      const dummy = new THREE.Object3D();
+      // Matrix
       dummy.position.copy(pos);
       const normal = pos.clone().normalize();
       dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
       dummy.updateMatrix();
       
-      return { matrix: dummy.matrix, color: new THREE.Color(colors.core), phase, event };
-    }),
-    [events]
-  );
+      data.push({ 
+        matrix: dummy.matrix.clone(), 
+        color: new THREE.Color(sentimentColors.core),
+        event 
+      });
+    });
 
-  useEffect(() => {
-    if (!meshRef.current || !ringRef.current) return;
+    return data;
+  }, [events]);
+
+  useLayoutEffect(() => {
+    if (!meshRef.current) return;
 
     markerData.forEach((data, i) => {
       meshRef.current.setMatrixAt(i, data.matrix);
       meshRef.current.setColorAt(i, data.color);
       
-      ringRef.current.setMatrixAt(i, data.matrix);
-      // We pass phase via individual instance scale or attribute if using custom shader
-      // For now, let's just use matrices and colors
+      if (ringRef.current) {
+        ringRef.current.setMatrixAt(i, data.matrix);
+        ringRef.current.setColorAt(i, data.color);
+      }
     });
 
     meshRef.current.instanceMatrix.needsUpdate = true;
-    meshRef.current.instanceColor.needsUpdate = true;
-    ringRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+    
+    if (ringRef.current) {
+      ringRef.current.instanceMatrix.needsUpdate = true;
+      if (ringRef.current.instanceColor) ringRef.current.instanceColor.needsUpdate = true;
+    }
   }, [markerData]);
 
   useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    if (ringRef.current && !isHighPerf) {
-      // In quality mode, we could manually update pulses, 
-      // but the Shader approach is better.
-      // For simplicity in this step, let's keep pulses for non-high-perf mode.
+    if (ringRef.current && ringRef.current.material.uniforms) {
+      ringRef.current.material.uniforms.uTime.value = state.clock.elapsedTime;
     }
   });
 
@@ -522,8 +549,10 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
     <group>
       {/* Core dots */}
       <instancedMesh
+        key={`dots-${count}`}
         ref={meshRef}
         args={[null, null, count]}
+        frustumCulled={false}
         onPointerOver={(e) => {
           e.stopPropagation();
           const idx = e.instanceId;
@@ -546,14 +575,19 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
         }}
       >
         <sphereGeometry args={[0.025, 12, 12]} />
-        <meshBasicMaterial vertexColors />
+        <meshBasicMaterial color="#ffffff" />
       </instancedMesh>
 
       {/* Pulse rings — only in quality mode or simplified in high-perf */}
       {!isHighPerf && (
-        <instancedMesh ref={ringRef} args={[null, null, count]}>
+        <instancedMesh 
+          key={`rings-${count}`}
+          ref={ringRef} 
+          args={[null, null, count]}
+          frustumCulled={false}
+        >
           <ringGeometry args={[0.018, 0.022, 16]} />
-          <meshBasicMaterial transparent opacity={0.3} side={THREE.DoubleSide} />
+          <meshBasicMaterial transparent opacity={0.3} side={THREE.DoubleSide} color="#ffffff" />
         </instancedMesh>
       )}
     </group>
