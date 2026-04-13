@@ -54,16 +54,17 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
 
   return (
     <div 
-      ref={containerRef}
-      className="w-full h-full overflow-y-auto custom-scrollbar relative"
+      className="w-full h-full overflow-hidden relative group"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      style={{
-        scrollbarWidth: 'none', // Hide default scrollbar for cleaner look
-        msOverflowStyle: 'none'
-      }}
     >
-      <div className="flex flex-col w-full min-h-full py-4">
+      <div 
+        className="flex flex-col w-full py-4 animate-vertical-marquee"
+        style={{
+          animationPlayState: isPaused ? 'paused' : 'running',
+          animationDuration: `${items.length * 4}s`
+        }}
+      >
         {items.map((event, index) => {
           const isActive = event.id === selectedEventId;
           return (
@@ -96,6 +97,16 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
           );
         })}
       </div>
+
+      <style jsx>{`
+        @keyframes vertical-marquee {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+        .animate-vertical-marquee {
+          animation: vertical-marquee linear infinite;
+        }
+      `}</style>
     </div>
   );
 }
