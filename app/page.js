@@ -9,6 +9,7 @@ import EventNewsBlog from "../components/EventNewsBlog";
 import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
 import PerformanceToggle from "../components/PerformanceToggle";
+import AIAnalysisPanel from "../components/AIAnalysisPanel";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
 // Dynamic import prevents Three.js from running during SSR
@@ -157,10 +158,15 @@ export default function Dashboard() {
                 </p>
 
                 {/* Impact cards grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-4">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-6">
                   {selectedEvent.impacts.map((impact, idx) => (
                     <ImpactCard key={idx} impact={impact} />
                   ))}
+                </div>
+
+                {/* AI PRO ANALYSIS SECTION */}
+                <div className="mt-8 pt-8 border-t border-white/5">
+                  <AIAnalysisPanel event={selectedEvent} />
                 </div>
               </div>
             )}
