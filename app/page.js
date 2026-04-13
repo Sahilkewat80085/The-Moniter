@@ -60,17 +60,12 @@ export default function Dashboard() {
     <div className="flex h-full w-full bg-background overflow-hidden">
       {/* ── Left Panel: Event Feed ─────────────────────────────────────── */}
       <section className="w-80 border-r border-border flex flex-col bg-panel/80 flex-shrink-0">
-        <div className="p-4 border-b border-border flex flex-col gap-3 bg-panel/50 backdrop-blur-sm">
-          <div className="flex justify-between items-center">
-            <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Notifications</h2>
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-positive pulse-green"></span>
-              <span className="text-[10px] font-bold text-positive tracking-widest">LIVE</span>
-            </div>
+        <div className="p-4 border-b border-border flex justify-between items-center bg-panel/50 backdrop-blur-sm">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Notifications</h2>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-positive pulse-green"></span>
+            <span className="text-[10px] font-bold text-positive tracking-widest">LIVE</span>
           </div>
-          
-          {/* Performance Mode Switch */}
-          <PerformanceToggle />
         </div>
         
         {/* Animated Headline Marquee */}
