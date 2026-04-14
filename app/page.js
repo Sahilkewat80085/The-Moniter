@@ -10,6 +10,7 @@ import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
 import PerformanceToggle from "../components/PerformanceToggle";
 import AIAnalysisPanel from "../components/AIAnalysisPanel";
+import HistoricalCorrelation from "../components/HistoricalCorrelation";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
 // Dynamic import prevents Three.js from running during SSR
@@ -168,6 +169,9 @@ export default function Dashboard() {
                 <div className="mt-8 pt-8 border-t border-white/5">
                   <AIAnalysisPanel event={selectedEvent} />
                 </div>
+
+                {/* HISTORICAL CORRELATION SECTION */}
+                <HistoricalCorrelation correlation={selectedEvent.historicalCorrelations} />
               </div>
             )}
           </div>
