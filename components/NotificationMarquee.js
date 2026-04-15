@@ -5,8 +5,8 @@ import React, { useState, useEffect, useRef } from "react";
 /**
  * NotificationMarquee.js
  * 
- * A specialized marquee component for the Notifications panel header.
- * Scrolling through headlines with a professional intelligence aesthetic.
+ * A specialized marquee component for the Notifications panel.
+ * It automatically crawls vertically but allows for manual mouse scrolling.
  */
 export default function NotificationMarquee({ events, onSelect, selectedEventId }) {
   const containerRef = useRef(null);
@@ -32,10 +32,12 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
     if (!container) return;
 
     const scroll = () => {
+      // Only auto-scroll if not hovered
       if (!isPaused) {
-        container.scrollTop += 0.5; // Very slow crawl
+        container.scrollTop += 0.5; // Smooth slow crawl
         
-        // Reset to top once we've reached halfway through the duplicated list
+        // Loop back to top once we pass the first set of items
+        // We use scrollHeight / 2 because we duplicated the items
         if (container.scrollTop >= container.scrollHeight / 2) {
           container.scrollTop = 0;
         }
@@ -54,17 +56,12 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
 
   return (
     <div 
-      className="w-full h-full overflow-hidden relative group"
+      ref={containerRef}
+      className="w-full h-full overflow-y-auto custom-scrollbar relative group scroll-smooth"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div 
-        className="flex flex-col w-full py-4 animate-vertical-marquee"
-        style={{
-          animationPlayState: isPaused ? 'paused' : 'running',
-          animationDuration: `${items.length * 4}s`
-        }}
-      >
+      <div className="flex flex-col w-full py-2">
         {items.map((event, index) => {
           const isActive = event.id === selectedEventId;
           return (
@@ -97,16 +94,6 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
           );
         })}
       </div>
-
-      <style jsx>{`
-        @keyframes vertical-marquee {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(-50%); }
-        }
-        .animate-vertical-marquee {
-          animation: vertical-marquee linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
