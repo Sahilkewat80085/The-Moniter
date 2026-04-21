@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { INITIAL_EVENTS } from "../lib/mockData";
 import EventCard from "../components/EventCard";
-import ImpactCard from "../components/ImpactCard";
 import EventNewsBlog from "../components/EventNewsBlog";
 import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
@@ -158,12 +157,7 @@ export default function Dashboard() {
                   {selectedEvent.description}
                 </p>
 
-                {/* Impact cards grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-6">
-                  {selectedEvent.impacts.map((impact, idx) => (
-                    <ImpactCard key={idx} impact={impact} />
-                  ))}
-                </div>
+
 
                 {/* AI PRO ANALYSIS SECTION */}
                 <div className="mt-8 pt-8 border-t border-white/5">
