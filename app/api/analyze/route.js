@@ -17,8 +17,7 @@ export async function POST(request) {
 
     const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-    // Check if API key exists and is valid format
-    // Note: Gemini keys usually start with AIza. If yours doesn't, we still try, but warn.
+    // Check if API key exists
     if (!apiKey) {
       console.warn("GEMINI_API_KEY is missing. Falling back to simulation.");
       return NextResponse.json(generateSimulatedAnalysis(title, tags, sentiment));
@@ -32,7 +31,7 @@ export async function POST(request) {
 
     const prompt = `
       Analyze the following news event for a professional financial intelligence dashboard.
-      Your goal is to provide deep macro-economic context and historical parallels.
+      Your goal is to provide deep macro-economic context and find specialized historical events NOT typically listed in general news.
 
       EVENT TITLE: ${title}
       EVENT DESCRIPTION: ${description}
@@ -45,20 +44,31 @@ export async function POST(request) {
           { 
             "year": "YYYY", 
             "event": "Short Name of Event", 
-            "outcome": "Briefly what happened to markets", 
-            "market_trend": "e.g. +15% S&P 500", 
-            "relevance": "High/Direct/Macro" 
+            "outcome": "How it affected markets", 
+            "market_trend": "+X% Asset Name", 
+            "relevance": "High/Macro" 
           }
         ],
-        "ai_reasoning": "A 2-3 sentence professional analysis of why this specific event matters to global markets.",
-        "market_projection": "A short, actionable prediction (e.g., 'Risk-Off', 'Bullish for Tech', 'Yield Curve Pressure').",
+        "deep_historical_match": {
+          "event_name": "Unique Historical Event Name",
+          "year": "YYYY",
+          "context": "A detailed 1-2 sentence explanation of why this is a deep historical match for the current news.",
+          "then_vs_now": {
+            "then_metric": "e.g. 12% Crude Price",
+            "now_metric": "e.g. 5.1% Brent Crude",
+            "label": "e.g. Commodity Valuation",
+            "narrative": "A quick takeaway on the structural similarity."
+          }
+        },
+        "ai_reasoning": "A concise professional analysis of the market trajectory.",
+        "market_projection": "Actionable outcome (e.g., 'Risk-Off', 'Bullish tech')",
         "confidence": 85
       }
 
       Requirements:
-      - Provide exactly 2 high-fidelity historical parallels.
-      - Ensure parallels are real historical events.
-      - Keep the reasoning sophisticated but concise.
+      - Provide exactly 2 items in historical_parallels.
+      - Select a truly unique and significant event for 'deep_historical_match'.
+      - Ensure 'then_vs_now' metrics are relevant to the specific topic.
     `;
 
     const result = await model.generateContent(prompt);
@@ -71,8 +81,6 @@ export async function POST(request) {
     return NextResponse.json(analysis);
   } catch (error) {
     console.error("Gemini Analysis Error:", error.message);
-    
-    // Fallback to simulation logic so the UI doesn't crash or show "Connection Error"
     return NextResponse.json(generateSimulatedAnalysis(
       eventData.title || "", 
       eventData.tags || [], 
@@ -83,99 +91,78 @@ export async function POST(request) {
 
 /**
  * FALLBACK SIMULATION LOGIC
- * Used if API Key is missing, invalid, or if the API call fails.
  */
 function generateSimulatedAnalysis(title, tags, sentiment) {
   const text = (title + tags.join(" ")).toLowerCase();
-  const isGold = text.includes('gold') || text.includes('precious metal');
-  const isRates = text.includes('rates') || text.includes('fed') || text.includes('central bank');
-  const isEnergy = text.includes('oil') || text.includes('energy') || text.includes('gas');
+  const isGold = text.includes('gold');
+  const isRates = text.includes('rates') || text.includes('fed');
+
+  let baseContent;
 
   if (isGold) {
-    return {
+    baseContent = {
       historical_parallels: [
-        {
-          year: "2009-2011",
-          event: "Post-GFC Sovereign Diversification",
-          outcome: "Gold price surged from $800 to $1,900 as central banks shifted away from USD-denominated debt.",
-          market_trend: "+138% Gain in Bullion",
-          relevance: "High"
-        },
-        {
-          year: "2018",
-          event: "PBOC Reserve Expansion Phase",
-          outcome: "China added 100+ tons; Gold outperformed S&P 500 by 12% during US-China trade tensions.",
-          market_trend: "Safe Haven Inflow",
-          relevance: "Direct"
-        }
+        { year: "2011", event: "Post-Crisis Peak", outcome: "Gold hit record highs as trust in paper currency collapsed.", market_trend: "+35% YTD", relevance: "Direct" },
+        { year: "1971", event: "Nixon Shock", outcome: "US ended gold standard, leading to decade of inflation and gold outperformance.", market_trend: "+400% Decade", relevance: "Macro" }
       ],
-      ai_reasoning: "The current signal matches 'Institutional Accumulation' patterns. Pro-cyclical shifts in central bank reserves historically precede multi-quarter rallies in precious metals while exerting downward pressure on the DXY (Dollar Index).",
-      market_projection: "Strong Bullish Bias for Commodities; Bearish for USD Liquidity",
+      deep_historical_match: {
+        event_name: "1933 Executive Order 6102",
+        year: "1933",
+        context: "FDR prohibited private gold ownership, forcing sales to the Treasury. This structural reset changed gold value forever.",
+        then_vs_now: {
+          then_metric: "$20.67/oz",
+          now_metric: "$2100+/oz",
+          label: "Price Peg",
+          narrative: "Transition from fixed to free-float market dynamics."
+        }
+      },
+      ai_reasoning: "Current signals suggest central bank diversification away from Western fiat reserves.",
+      market_projection: "Strong Bullish Bias",
       confidence: 94
     };
-  }
-
-  if (isRates) {
-    return {
+  } else if (isRates) {
+    baseContent = {
       historical_parallels: [
-        {
-          year: "1994",
-          event: "The Great Bond Massacre",
-          outcome: "Fed abruptly raised rates multiple times; S&P 500 stagnated for 12 months as yields spiked.",
-          market_trend: "-18% Bond Price Action",
-          relevance: "Critical"
-        },
-        {
-          year: "2022",
-          event: "Post-Pandemic Inflation Pivot",
-          outcome: "Aggressive tightening led to the worst year for 60/40 portfolios in decades.",
-          market_trend: "-24% Tech Sector Drawdown",
-          relevance: "High"
-        }
+        { year: "1994", event: "Bond Massacre", outcome: "Unexpected tightening crushed long-dated paper.", market_trend: "-18% Bonds", relevance: "Critical" },
+        { year: "2022", event: "Rapid Pivot", outcome: "Fastest hike cycle in history caused tech drawdown.", market_trend: "-30% NASDAQ", relevance: "High" }
       ],
-      ai_reasoning: "Current rate rhetoric mirrors the 'Restrictive Plateau' of 1994. History suggests that during this phase, equity valuations are compressed by terminal rate uncertainty, favoring high-cash-flow sectors over growth.",
-      market_projection: "Defensive Posture Recommended; Yield Curves likely to remain Inverted",
+      deep_historical_match: {
+        event_name: "1980 Volcker Shock",
+        year: "1980",
+        context: "Fed Chair Volcker raised rates to 20% to break inflation, causing a recession but saving the USD.",
+        then_vs_now: {
+          then_metric: "20% Fed Funds",
+          now_metric: "5.5% Fed Funds",
+          label: "Terminal Rate",
+          narrative: "Relative cost of capital is still low vs historical extremes."
+        }
+      },
+      ai_reasoning: "The Fed is navigating a restrictive plateau trying to avoid a hard landing.",
+      market_projection: "Yield Sensitivity; Defensive Rotation",
       confidence: 89
     };
-  }
-
-  if (isEnergy) {
-    return {
+  } else {
+    baseContent = {
       historical_parallels: [
-        {
-          year: "1973",
-          event: "OPEC Oil Embargo",
-          outcome: "Global supply shock led to stagflation and a massive spike in energy prices.",
-          market_trend: "+400% Oil Price Jump",
-          relevance: "Historical"
-        },
-        {
-          year: "2022",
-          event: "Nord Stream Disruptions",
-          outcome: "European energy crisis forced industrial shutdowns and a pivot toward LNG.",
-          market_trend: "Massive Natural Gas Volatility",
-          relevance: "Direct"
-        }
+        { year: "2008", event: "Lehman Collapse", outcome: "Systemic risk reset valuations across all asset classes.", market_trend: "VIX 80+", relevance: "Major" },
+        { year: "2020", event: "Covid Flash Crash", outcome: "Massive liquidity injection saved the market from total collapse.", market_trend: "+100% BTC", relevance: "Medium" }
       ],
-      ai_reasoning: "Energy supply disruptions introduce systemic inflationary pressure. Market participants historically pivot toward energy producers and explorers as a hedge against rising input costs.",
-      market_projection: "Bullish for Energy Sector; Inflationary Hedge Positioning",
-      confidence: 91
+      deep_historical_match: {
+        event_name: "The Panic of 1907",
+        year: "1907",
+        context: "A liquidity crisis that led to the creation of the Federal Reserve. It shows the danger of shadow banking.",
+        then_vs_now: {
+          then_metric: "Zero CB Support",
+          now_metric: "QE Infinite",
+          label: "Centralization",
+          narrative: "A move from private bank bailouts to systemic sovereign support."
+        }
+      },
+      ai_reasoning: "This event introduces volatility linked to institutional positioning.",
+      market_projection: "Neutral-Bearish; Flight to Safety",
+      confidence: 72
     };
   }
 
-  // Generic Dynamic Fallback
-  return {
-    historical_parallels: [
-      {
-        year: "Various",
-        event: "Recent Geopolitical Shift",
-        outcome: "Increased volatility in regional indices followed by a flight to quality assets.",
-        market_trend: "VIX +15% Avg",
-        relevance: "Medium"
-      }
-    ],
-    ai_reasoning: `Analysis of "${title}" indicates potential structural shifts in market volatility. This matches historical patterns of information asymmetry in similar macro-economic cycles.`,
-    market_projection: "Heightened Volatility; Neutral-Bearish Bias",
-    confidence: 72
-  };
+  return baseContent;
 }
