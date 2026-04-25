@@ -7,6 +7,7 @@ import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
 import AIAnalysisPanel from "../components/AIAnalysisPanel";
 import HistoricalCorrelation from "../components/HistoricalCorrelation";
+import PerformanceToggle from "../components/PerformanceToggle";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
 // Dynamic import prevents Three.js from running during SSR
@@ -208,6 +209,10 @@ export default function Dashboard() {
       {/* ── Right Panel: Markets + Filters + News ─────────────────────── */}
       <section className="w-[400px] border-l border-border flex flex-col bg-panel/40 backdrop-blur-xl flex-shrink-0">
         <div className="p-8 flex flex-col gap-10 overflow-y-auto custom-scrollbar h-full">
+          <div className="flex justify-end">
+            <PerformanceToggle />
+          </div>
+
           <div className="flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Source Intelligence</h2>

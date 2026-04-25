@@ -957,7 +957,7 @@ export default function GlobeView({
   className = "",
   height = "100%",
 }) {
-  const [performanceMode, setPerformanceMode] = useState("high");
+  const [performanceMode, setPerformanceMode] = useState("quality");
   const [hoveredEvent, setHoveredEvent] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef();
@@ -991,7 +991,7 @@ export default function GlobeView({
         .split("; ")
         .find((row) => row.startsWith(PERF_COOKIE))
         ?.split("=")[1];
-      setPerformanceMode(mode || "high");
+      setPerformanceMode(mode || "quality");
     };
 
     checkMode();
