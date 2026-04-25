@@ -154,6 +154,7 @@ export function useIntelligenceFeed() {
               id: `ev_live_${hash}_${idx}`,
               title: article.title,
               timestamp: timeAgo(article.publishedAt),
+              publishedAt: article.publishedAt || new Date().toISOString(),
               source: article.source?.toUpperCase() || "GLOBAL NEWS",
               tags: ["Live Update", region],
               sentiment,
