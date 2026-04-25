@@ -2,12 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { INITIAL_EVENTS } from "../lib/mockData";
-import EventCard from "../components/EventCard";
 import EventNewsBlog from "../components/EventNewsBlog";
 import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
-import PerformanceToggle from "../components/PerformanceToggle";
 import AIAnalysisPanel from "../components/AIAnalysisPanel";
 import HistoricalCorrelation from "../components/HistoricalCorrelation";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
@@ -35,10 +32,11 @@ function getIndiaTime() {
 }
 
 export default function Dashboard() {
-  const events = useIntelligenceFeed();
+  const { events, articles, articlesLoading } = useIntelligenceFeed();
   // null = no event selected → full-globe default view
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [syncTime, setSyncTime] = useState("");
+  const [showGlobe, setShowGlobe] = useState(false);
 
   useEffect(() => {
     setSyncTime(getIndiaTime());
@@ -46,6 +44,30 @@ export default function Dashboard() {
       setSyncTime(getIndiaTime());
     }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const revealGlobe = () => {
+      if (!cancelled) {
+        setShowGlobe(true);
+      }
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(revealGlobe, { timeout: 1200 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(revealGlobe, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   const selectedEvent = events.find(e => e.id === selectedEventId) || null;
@@ -88,12 +110,23 @@ export default function Dashboard() {
 
         {/* Globe fills 100% of this panel always */}
         <div className="absolute inset-0 z-0">
-          <GlobeView
-            events={events}
-            selectedEventId={selectedEventId}
-            onSelectEvent={(ev) => setSelectedEventId(ev.id)}
-            height="100%"
-          />
+          {showGlobe ? (
+            <GlobeView
+              events={events}
+              selectedEventId={selectedEventId}
+              onSelectEvent={(ev) => setSelectedEventId(ev.id)}
+              height="100%"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-background">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+                <span className="text-[10px] font-mono text-slate-600 tracking-widest uppercase">
+                  Preparing Globe
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Event Detail Drawer ────────────────────────────────────── */}
@@ -190,7 +223,7 @@ export default function Dashboard() {
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Financial News</h2>
               <span className="text-[9px] font-mono text-slate-600">SRC: GNEWS</span>
             </div>
-            <NewsFeed />
+            <NewsFeed articles={articles} loading={articlesLoading} />
           </div>
         </div>
       </section>

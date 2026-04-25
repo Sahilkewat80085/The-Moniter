@@ -21,6 +21,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
+const PERF_COOKIE = "perf_mode=";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,7 +75,7 @@ function StarField({ performanceMode }) {
   const pointsRef = useRef();
   
   // Cut count by 75% in high performance mode
-  const count = performanceMode === "high" ? 750 : 3000;
+  const count = performanceMode === "high" ? 250 : 900;
 
   const { positions, sizes } = useMemo(() => {
     const positions = new Float32Array(count * 3);
@@ -141,7 +143,7 @@ function EarthSphere({ performanceMode }) {
 
   // Procedural dot-map texture — same logic as before but with a quality check
   const dotTexture = useMemo(() => {
-    const size = isHighPerf ? 512 : 1024; // Smaller texture for high-perf mode
+    const size = isHighPerf ? 256 : 512; // Smaller texture for faster startup
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size / 2;
@@ -150,8 +152,8 @@ function EarthSphere({ performanceMode }) {
     ctx.fillStyle = "#060c14";
     ctx.fillRect(0, 0, size, size / 2);
 
-    const dotSpacing = isHighPerf ? 6 : 8; // Adjust density based on texture size
-    const dotRadius = isHighPerf ? 0.8 : 1.2;
+    const dotSpacing = isHighPerf ? 8 : 10; // Adjust density based on texture size
+    const dotRadius = isHighPerf ? 0.7 : 1;
     ctx.fillStyle = "rgba(30, 58, 92, 0.9)";
     const oceanColor = "rgba(12, 20, 35, 0.5)";
 
@@ -353,11 +355,13 @@ function buildGeometryFromTopojson(topo) {
   return geo;
 }
 
-function CountryBorders() {
+function CountryBorders({ enabled }) {
   const [geometry, setGeometry] = useState(null);
   const groupRef = useRef();
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
 
     // Try CDN URLs in order until one succeeds
@@ -397,11 +401,9 @@ function CountryBorders() {
 
     tryFetch(GEOJSON_URLS);
     return () => { cancelled = true; };
-  }, []);
+  }, [enabled]);
 
-
-
-  if (!geometry) return null;
+  if (!enabled || !geometry) return null;
 
   return (
     <group ref={groupRef}>
@@ -702,6 +704,7 @@ function CameraRig() {
 
 function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent, performanceMode }) {
   const masterGroupRef = useRef();
+  const isHighPerf = performanceMode === "high";
 
   useFrame(() => {
     if (masterGroupRef.current) {
@@ -728,7 +731,7 @@ function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent, perf
       
       <group ref={masterGroupRef}>
         <EarthSphere performanceMode={performanceMode} />
-        <CountryBorders />
+        <CountryBorders enabled={!isHighPerf} />
         
         {/* Optimized Instanced Layer for main pins */}
         <InstancedMarkersLayer
@@ -954,7 +957,7 @@ export default function GlobeView({
   className = "",
   height = "100%",
 }) {
-  const [performanceMode, setPerformanceMode] = useState("quality");
+  const [performanceMode, setPerformanceMode] = useState("high");
   const [hoveredEvent, setHoveredEvent] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef();
@@ -986,9 +989,9 @@ export default function GlobeView({
     const checkMode = () => {
       const mode = document.cookie
         .split("; ")
-        .find((row) => row.startsWith("perf_mode="))
+        .find((row) => row.startsWith(PERF_COOKIE))
         ?.split("=")[1];
-      setPerformanceMode(mode || "quality");
+      setPerformanceMode(mode || "high");
     };
 
     checkMode();

@@ -76,6 +76,8 @@ const COUNTRY_HUBS = {
 
 export function useIntelligenceFeed() {
   const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [articles, setArticles] = useState([]);
+  const [articlesLoading, setArticlesLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -84,8 +86,12 @@ export function useIntelligenceFeed() {
       try {
         const res = await fetch("/api/news");
         const json = await res.json();
-        
+
         if (json.success && json.articles?.length > 0) {
+          if (mounted) {
+            setArticles(json.articles);
+          }
+
           const formattedEvents = json.articles.map((article, idx) => {
             const hash = hashString(article.title || "");
             const textToAnalyze = (article.title + " " + (article.description || "")).toLowerCase();
@@ -170,9 +176,15 @@ export function useIntelligenceFeed() {
           if (mounted) {
             setEvents(formattedEvents);
           }
+        } else if (mounted) {
+          setArticles([]);
         }
       } catch (err) {
         console.error("Failed to fetch news for feed", err);
+      } finally {
+        if (mounted) {
+          setArticlesLoading(false);
+        }
       }
     }
 
@@ -185,5 +197,5 @@ export function useIntelligenceFeed() {
     };
   }, []);
 
-  return events;
+  return { events, articles, articlesLoading };
 }

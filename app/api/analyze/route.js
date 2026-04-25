@@ -17,9 +17,9 @@ export async function POST(request) {
 
     const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-    // Check if API key exists
-    if (!apiKey) {
-      console.warn("GEMINI_API_KEY is missing. Falling back to simulation.");
+    // Check if API key exists and looks valid (Google AI keys start with "AIza")
+    if (!apiKey || !apiKey.startsWith("AIza")) {
+      console.warn("GEMINI_API_KEY is missing or invalid. Falling back to simulation.");
       return NextResponse.json(generateSimulatedAnalysis(title, tags, sentiment));
     }
 

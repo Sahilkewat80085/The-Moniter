@@ -1,35 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 
-export default function NewsFeed() {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [noKey, setNoKey] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/news");
-        const json = await res.json();
-        if (json.noKey) {
-          setNoKey(true);
-        } else if (json.success) {
-          setArticles(json.articles || []);
-        }
-      } catch (e) {
-        console.error("[NewsFeed]", e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-    // Poll every 5 minutes
-    const id = setInterval(load, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
-
+export default function NewsFeed({ articles = [], loading = false }) {
   function timeAgo(publishedAt) {
     if (!publishedAt) return "";
     const now = new Date();
@@ -48,28 +21,6 @@ export default function NewsFeed() {
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-12 rounded-lg bg-background/50 border border-border animate-pulse" />
         ))}
-      </div>
-    );
-  }
-
-  if (noKey) {
-    return (
-      <div className="p-4 rounded-lg border border-border/50 bg-background/30 text-center">
-        <p className="text-[11px] font-bold text-warning uppercase tracking-widest mb-1">
-          News API Key Required
-        </p>
-        <p className="text-[10px] text-slate-500 font-mono">
-          Add <span className="text-slate-300">GNEWS_API_KEY</span> to{" "}
-          <span className="text-info">.env.local</span>
-        </p>
-        <a
-          href="https://gnews.io/register"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-2 text-[10px] text-info hover:underline font-mono"
-        >
-          → Free key at gnews.io/register
-        </a>
       </div>
     );
   }
