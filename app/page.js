@@ -239,12 +239,11 @@ export default function Dashboard() {
 
       <section className="flex-1 flex flex-col relative overflow-hidden">
         <DashboardBriefingBar
-          totalEvents={filteredEvents.length}
-          visibleEvents={visibleEvents.length}
           dominantSentiment={briefing.dominantSentiment}
           topRegion={briefing.topRegion}
           topTheme={briefing.topTheme}
           highestImpactEvent={briefing.highestImpactEvent}
+          onOpenEvent={handleCardClick}
         />
 
         <div className="absolute inset-0 z-0">
