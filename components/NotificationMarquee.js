@@ -13,10 +13,8 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
   const [isPaused, setIsPaused] = useState(false);
   const animationRef = useRef(null);
 
-  if (!events || events.length === 0) return null;
-
   // Duplicate events to create a seamless loop
-  const items = [...events, ...events];
+  const items = events && events.length > 0 ? [...events, ...events] : [];
 
   const sentimentToColor = (sentiment) => {
     switch (sentiment) {
@@ -29,7 +27,7 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || items.length === 0) return;
 
     const scroll = () => {
       // Only auto-scroll if not hovered
@@ -53,6 +51,8 @@ export default function NotificationMarquee({ events, onSelect, selectedEventId 
       }
     };
   }, [isPaused, items.length]);
+
+  if (items.length === 0) return null;
 
   return (
     <div 
