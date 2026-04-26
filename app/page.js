@@ -153,7 +153,7 @@ export default function Dashboard() {
 
     const selectedStillVisible = visibleEvents.some((event) => event.id === selectedEventId);
     if (!selectedStillVisible) {
-      setSelectedEventId(visibleEvents[0].id);
+      setSelectedEventId(null);
     }
   }, [visibleEvents, selectedEventId]);
 
