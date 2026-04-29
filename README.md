@@ -176,7 +176,3 @@ This project is not trying to be a plain admin panel. It is built more like a ma
 - The globe is dynamically imported client-side to avoid SSR issues with 3D rendering.
 - The dashboard is optimized for a dramatic, full-screen layout rather than a generic card grid.
 - Market and news freshness depend on third-party API availability and quotas.
-
-## License
-
-No license file is currently present in this repository. Add one if you want the project to be reusable by others under explicit terms.
