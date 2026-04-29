@@ -7,7 +7,6 @@ import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
 import AIAnalysisPanel from "../components/AIAnalysisPanel";
 import HistoricalCorrelation from "../components/HistoricalCorrelation";
-import PerformanceToggle from "../components/PerformanceToggle";
 import DashboardBriefingBar from "../components/DashboardBriefingBar";
 import IntelligenceControls from "../components/IntelligenceControls";
 import TimelineControls from "../components/TimelineControls";
@@ -198,8 +197,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-full w-full bg-background overflow-hidden">
-      <section className="w-80 border-r border-border flex flex-col bg-panel/80 flex-shrink-0">
-        <div className="p-4 border-b border-border flex justify-between items-center bg-panel/50 backdrop-blur-sm">
+      <section className="w-72 border-r border-border flex flex-col bg-panel/80 flex-shrink-0">
+        <div className="px-3 py-4 border-b border-border flex justify-between items-center bg-panel/50 backdrop-blur-sm">
           <div>
             <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
               Notifications
@@ -214,7 +213,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="px-4 py-4 border-b border-border/70">
+        <div className="px-3 py-3 border-b border-border/70">
           <IntelligenceControls
             query={query}
             onQueryChange={setQuery}
@@ -228,7 +227,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="flex-1 overflow-hidden px-4 py-4 flex flex-col">
+        <div className="flex-1 overflow-hidden px-3 py-3 flex flex-col">
           <NotificationMarquee
             events={visibleEvents}
             onSelect={handleCardClick}
@@ -361,10 +360,6 @@ export default function Dashboard() {
 
       <section className="w-[400px] border-l border-border flex flex-col bg-panel/40 backdrop-blur-xl flex-shrink-0">
         <div className="p-8 flex flex-col gap-10 overflow-y-auto custom-scrollbar h-full">
-          <div className="flex justify-end">
-            <PerformanceToggle />
-          </div>
-
           <div className="flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
