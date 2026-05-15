@@ -8,8 +8,6 @@ import NotificationMarquee from "../components/NotificationMarquee";
 import AIAnalysisPanel from "../components/AIAnalysisPanel";
 import HistoricalCorrelation from "../components/HistoricalCorrelation";
 import DashboardBriefingBar from "../components/DashboardBriefingBar";
-import IntelligenceControls from "../components/IntelligenceControls";
-import TimelineControls from "../components/TimelineControls";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
 const GlobeView = dynamic(() => import("../components/GlobeView"), {
@@ -46,12 +44,6 @@ export default function Dashboard() {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [syncTime, setSyncTime] = useState("");
   const [showGlobe, setShowGlobe] = useState(false);
-  const [query, setQuery] = useState("");
-  const [regionFilter, setRegionFilter] = useState("all");
-  const [sentimentFilter, setSentimentFilter] = useState("all");
-  const [minImpact, setMinImpact] = useState(0);
-  const [timelineIndex, setTimelineIndex] = useState(0);
-  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
 
   useEffect(() => {
     setSyncTime(getIndiaTime());
@@ -89,60 +81,8 @@ export default function Dashboard() {
     return [...events].sort((a, b) => parseEventTime(b, 0) - parseEventTime(a, 0));
   }, [events]);
 
-  const regions = useMemo(() => {
-    return Array.from(new Set(sortedEvents.map((event) => event.region).filter(Boolean))).sort();
-  }, [sortedEvents]);
-
-  const filteredEvents = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return sortedEvents.filter((event) => {
-      const searchableText = [
-        event.title,
-        event.region,
-        event.source,
-        event.description,
-        ...(event.tags || []),
-        ...(event.impacts || []).map((impact) => impact.asset),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesQuery = !normalizedQuery || searchableText.includes(normalizedQuery);
-      const matchesRegion = regionFilter === "all" || event.region === regionFilter;
-      const matchesSentiment = sentimentFilter === "all" || event.sentiment === sentimentFilter;
-      const matchesImpact = (event.impactScore || 0) >= minImpact;
-
-      return matchesQuery && matchesRegion && matchesSentiment && matchesImpact;
-    });
-  }, [sortedEvents, query, regionFilter, sentimentFilter, minImpact]);
-
-  useEffect(() => {
-    setTimelineIndex((current) => {
-      if (filteredEvents.length === 0) return 0;
-      if (current === 0) return filteredEvents.length;
-      return Math.min(current, filteredEvents.length);
-    });
-  }, [filteredEvents.length]);
-
-  useEffect(() => {
-    if (!isTimelinePlaying || filteredEvents.length <= 1) return;
-
-    const interval = window.setInterval(() => {
-      setTimelineIndex((current) => {
-        if (current >= filteredEvents.length) return 1;
-        return current + 1;
-      });
-    }, 1800);
-
-    return () => window.clearInterval(interval);
-  }, [isTimelinePlaying, filteredEvents.length]);
-
-  const visibleEvents = useMemo(() => {
-    if (filteredEvents.length === 0 || timelineIndex <= 0) return [];
-    return filteredEvents.slice(0, Math.min(timelineIndex, filteredEvents.length));
-  }, [filteredEvents, timelineIndex]);
+  // Use all sorted events since filtering and timeline are removed
+  const visibleEvents = sortedEvents;
 
   useEffect(() => {
     if (visibleEvents.length === 0) {
@@ -159,7 +99,7 @@ export default function Dashboard() {
   const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) || null;
 
   const briefing = useMemo(() => {
-    const pool = visibleEvents.length > 0 ? visibleEvents : filteredEvents;
+    const pool = visibleEvents;
     if (pool.length === 0) {
       return {
         dominantSentiment: "neutral",
@@ -187,7 +127,7 @@ export default function Dashboard() {
       ),
       highestImpactEvent: [...pool].sort((a, b) => (b.impactScore || 0) - (a.impactScore || 0))[0] || null,
     };
-  }, [filteredEvents, visibleEvents]);
+  }, [visibleEvents]);
 
   const handleCardClick = (event) => {
     setSelectedEventId((prev) => (prev === event.id ? null : event.id));
@@ -211,20 +151,6 @@ export default function Dashboard() {
             <span className="w-1.5 h-1.5 rounded-full bg-positive pulse-green" />
             <span className="text-[10px] font-bold text-positive tracking-widest">LIVE</span>
           </div>
-        </div>
-
-        <div className="px-3 py-3 border-b border-border/70">
-          <IntelligenceControls
-            query={query}
-            onQueryChange={setQuery}
-            region={regionFilter}
-            onRegionChange={setRegionFilter}
-            sentiment={sentimentFilter}
-            onSentimentChange={setSentimentFilter}
-            minImpact={minImpact}
-            onMinImpactChange={setMinImpact}
-            regions={regions}
-          />
         </div>
 
         <div className="flex-1 overflow-hidden px-3 py-3 flex flex-col">
@@ -264,18 +190,6 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-
-        <TimelineControls
-          total={filteredEvents.length}
-          current={Math.min(timelineIndex, filteredEvents.length)}
-          playing={isTimelinePlaying}
-          onTogglePlaying={() => setIsTimelinePlaying((prev) => !prev)}
-          onScrub={(value) => {
-            setIsTimelinePlaying(false);
-            setTimelineIndex(value);
-          }}
-          activeEvent={selectedEvent || briefing.highestImpactEvent}
-        />
 
         <div
           className="absolute inset-x-0 bottom-0 z-20 transition-transform duration-500 ease-in-out"
