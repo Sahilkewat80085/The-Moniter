@@ -7,7 +7,6 @@ import NewsFeed from "../components/NewsFeed";
 import NotificationMarquee from "../components/NotificationMarquee";
 import AIAnalysisPanel from "../components/AIAnalysisPanel";
 import HistoricalCorrelation from "../components/HistoricalCorrelation";
-import DashboardBriefingBar from "../components/DashboardBriefingBar";
 import { useIntelligenceFeed } from "../hooks/useIntelligenceFeed";
 
 const GlobeView = dynamic(() => import("../components/GlobeView"), {
@@ -98,37 +97,6 @@ export default function Dashboard() {
 
   const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) || null;
 
-  const briefing = useMemo(() => {
-    const pool = visibleEvents;
-    if (pool.length === 0) {
-      return {
-        dominantSentiment: "neutral",
-        topRegion: "Global",
-        topTheme: "Macro",
-        highestImpactEvent: null,
-      };
-    }
-
-    const countTopValue = (items, fallback) => {
-      const counts = items.reduce((acc, item) => {
-        acc[item] = (acc[item] || 0) + 1;
-        return acc;
-      }, {});
-
-      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || fallback;
-    };
-
-    return {
-      dominantSentiment: countTopValue(pool.map((event) => event.sentiment || "neutral"), "neutral"),
-      topRegion: countTopValue(pool.map((event) => event.region || "Global"), "Global"),
-      topTheme: countTopValue(
-        pool.map((event) => event.tags?.[0] || event.impacts?.[0]?.asset || "Macro"),
-        "Macro"
-      ),
-      highestImpactEvent: [...pool].sort((a, b) => (b.impactScore || 0) - (a.impactScore || 0))[0] || null,
-    };
-  }, [visibleEvents]);
-
   const handleCardClick = (event) => {
     setSelectedEventId((prev) => (prev === event.id ? null : event.id));
   };
@@ -163,14 +131,6 @@ export default function Dashboard() {
       </section>
 
       <section className="flex-1 flex flex-col relative overflow-hidden">
-        <DashboardBriefingBar
-          dominantSentiment={briefing.dominantSentiment}
-          topRegion={briefing.topRegion}
-          topTheme={briefing.topTheme}
-          highestImpactEvent={briefing.highestImpactEvent}
-          onOpenEvent={handleCardClick}
-        />
-
         <div className="absolute inset-0 z-0">
           {showGlobe ? (
             <GlobeView
