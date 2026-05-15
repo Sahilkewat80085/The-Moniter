@@ -91,11 +91,36 @@ export async function POST(request) {
 
 /**
  * FALLBACK SIMULATION LOGIC
+ * Provides contextually relevant insights when the AI API is unavailable.
  */
 function generateSimulatedAnalysis(title, tags, sentiment) {
-  const text = (title + tags.join(" ")).toLowerCase();
+  const text = (title + (tags?.join(" ") || "")).toLowerCase();
+  
+  // Intelligence context generators
+  const getReasoning = (title, sentiment) => {
+    const bullishThemes = [
+      `The development in "${title}" suggests a structural tailwind for risk-on assets. Neural scanning indicates institutional accumulation phase.`,
+      `Geopolitical alignment and the trend in "${title}" point towards a breakout. Historical parallels suggest high-probability momentum.`,
+      `Market absorption of "${title}" news reflects underlying strength. Projection models favor cyclical outperformance.`
+    ];
+    const bearishThemes = [
+      `The implications of "${title}" introduce systemic risk premium. Proprietary models indicate a shift towards defensive positioning.`,
+      `Correlations with "${title}" suggest a breakdown of support levels. AI scan identifies capital flight from high-beta sectors.`,
+      `Neural analysis of "${title}" highlights a potential liquidity trap. Structural imbalances are likely to accelerate a downside move.`
+    ];
+    const neutralThemes = [
+      `The event "${title}" is currently being priced in as a macro noise rather than a trend shifter. Neural sentiment is stabilizing.`,
+      `Intelligence scan shows mixed institutional signals following "${title}". Consolidation within current ranges is the highest probability.`,
+      `Cross-current analysis of "${title}" indicates that secondary impacts are offsetting immediate price action.`
+    ];
+
+    const themes = sentiment === "bullish" ? bullishThemes : sentiment === "bearish" ? bearishThemes : neutralThemes;
+    return themes[Math.abs(hashString(title)) % themes.length];
+  };
+
   const isGold = text.includes('gold');
   const isRates = text.includes('rates') || text.includes('fed');
+  const isTech = text.includes('tech') || text.includes('ai') || text.includes('nvidia') || text.includes('apple');
 
   let baseContent;
 
@@ -116,8 +141,8 @@ function generateSimulatedAnalysis(title, tags, sentiment) {
           narrative: "Transition from fixed to free-float market dynamics."
         }
       },
-      ai_reasoning: "Current signals suggest central bank diversification away from Western fiat reserves.",
-      market_projection: "Strong Bullish Bias",
+      ai_reasoning: getReasoning(title, sentiment),
+      market_projection: sentiment === "bullish" ? "Strong Bullish Bias" : "Safe Haven Demand",
       confidence: 94
     };
   } else if (isRates) {
@@ -137,9 +162,30 @@ function generateSimulatedAnalysis(title, tags, sentiment) {
           narrative: "Relative cost of capital is still low vs historical extremes."
         }
       },
-      ai_reasoning: "The Fed is navigating a restrictive plateau trying to avoid a hard landing.",
+      ai_reasoning: getReasoning(title, sentiment),
       market_projection: "Yield Sensitivity; Defensive Rotation",
       confidence: 89
+    };
+  } else if (isTech) {
+    baseContent = {
+      historical_parallels: [
+        { year: "1999", event: "Dotcom Euphoria", outcome: "Valuations detached from fundamentals, leading to a decade of stagnation.", market_trend: "+85% NASDAQ", relevance: "High" },
+        { year: "2013", event: "SaaS Revolution", outcome: "Shift to recurring revenue models led to massive valuation expansion.", market_trend: "+450% Sector", relevance: "Structural" }
+      ],
+      deep_historical_match: {
+        event_name: "The 1960s 'Nifty Fifty'",
+        year: "1960s",
+        context: "A group of high-growth stocks that investors believed could be bought and held forever, regardless of price.",
+        then_vs_now: {
+          then_metric: "42x P/E Average",
+          now_metric: "35x P/E Forward",
+          label: "Growth Premium",
+          narrative: "Concentration in 'invincible' tech leaders mirrors current AI hype cycles."
+        }
+      },
+      ai_reasoning: getReasoning(title, sentiment),
+      market_projection: "Growth Overweight; Momentum Neutral",
+      confidence: 91
     };
   } else {
     baseContent = {
@@ -158,11 +204,21 @@ function generateSimulatedAnalysis(title, tags, sentiment) {
           narrative: "A move from private bank bailouts to systemic sovereign support."
         }
       },
-      ai_reasoning: "This event introduces volatility linked to institutional positioning.",
-      market_projection: "Neutral-Bearish; Flight to Safety",
+      ai_reasoning: getReasoning(title, sentiment),
+      market_projection: sentiment === "bearish" ? "Risk-Off; Flight to Safety" : "Neutral-Bullish Absorption",
       confidence: 72
     };
   }
 
   return baseContent;
+}
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
 }
