@@ -28,6 +28,7 @@ export async function GET() {
           url: a.url,
           publishedAt: a.publishedAt,
           description: a.description,
+          image: a.image,
         }));
         articles = [...articles, ...gnewsArticles];
       }
@@ -52,6 +53,7 @@ export async function GET() {
           // Finnhub timestamp is in Unix seconds
           publishedAt: a.datetime ? new Date(a.datetime * 1000).toISOString() : new Date().toISOString(),
           description: a.summary,
+          image: a.image,
         }));
         articles = [...articles, ...finnArticles];
       }

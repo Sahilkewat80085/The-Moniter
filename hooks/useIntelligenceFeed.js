@@ -162,6 +162,7 @@ export function useIntelligenceFeed() {
               region,
               coordinates: [lat, lng],
               description: article.description || "No further details available for this event.",
+              image: article.image,
               impacts: [
                 { 
                   asset, 

@@ -27,17 +27,27 @@ export default function EventNewsBlog({ event }) {
 
   return (
     <div className="flex flex-col border border-border/70 rounded-xl bg-background/40 overflow-hidden group hover:border-info/30 transition-colors h-full min-h-[350px]">
-      {/* Blog Image/Banner Placeholder */}
-      <div className="w-full h-36 bg-slate-900 border-b border-border/50 relative overflow-hidden flex items-center justify-center">
-        {/* Abstract pattern */}
-        <div className="absolute inset-0 opacity-30 bg-[linear-gradient(45deg,transparent_25%,rgba(59,130,246,0.1)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]" />
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 to-transparent z-10" />
+      {/* Blog Image/Banner */}
+      <div className="w-full h-40 bg-slate-900 border-b border-border/50 relative overflow-hidden flex items-center justify-center">
+        {event.image ? (
+          <img 
+            src={event.image} 
+            alt={event.title} 
+            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+          />
+        ) : (
+          <>
+            {/* Abstract pattern fallback */}
+            <div className="absolute inset-0 opacity-30 bg-[linear-gradient(45deg,transparent_25%,rgba(59,130,246,0.1)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]" />
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-blue-500/10 z-0">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </>
+        )}
         
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-blue-500/10 z-0">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="2" y1="12" x2="22" y2="12"/>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        </svg>
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 to-transparent z-10" />
 
         {/* Tags */}
         <div className="absolute bottom-3 left-4 z-20 flex gap-2">
