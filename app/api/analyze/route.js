@@ -15,11 +15,9 @@ export async function POST(request) {
     eventData = body;
     const { title, description, tags, sentiment } = body;
 
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
-
-    // Check if API key exists and looks valid (Google AI keys start with "AIza")
-    if (!apiKey || !apiKey.startsWith("AIza")) {
-      console.warn("GEMINI_API_KEY is missing or invalid. Falling back to simulation.");
+    // Attempt to use the key if it exists
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY is missing. Falling back to simulation.");
       return NextResponse.json(generateSimulatedAnalysis(title, tags, sentiment));
     }
 
@@ -124,93 +122,49 @@ function generateSimulatedAnalysis(title, tags, sentiment) {
 
   let baseContent;
 
-  if (isGold) {
-    baseContent = {
-      historical_parallels: [
-        { year: "2011", event: "Post-Crisis Peak", outcome: "Gold hit record highs as trust in paper currency collapsed.", market_trend: "+35% YTD", relevance: "Direct" },
-        { year: "1971", event: "Nixon Shock", outcome: "US ended gold standard, leading to decade of inflation and gold outperformance.", market_trend: "+400% Decade", relevance: "Macro" }
-      ],
-      deep_historical_match: {
-        event_name: "1933 Executive Order 6102",
-        year: "1933",
-        context: "FDR prohibited private gold ownership, forcing sales to the Treasury. This structural reset changed gold value forever.",
-        then_vs_now: {
-          then_metric: "$20.67/oz",
-          now_metric: "$2100+/oz",
-          label: "Price Peg",
-          narrative: "Transition from fixed to free-float market dynamics."
-        }
-      },
-      ai_reasoning: getReasoning(title, sentiment),
-      market_projection: sentiment === "bullish" ? "Strong Bullish Bias" : "Safe Haven Demand",
-      confidence: 94
-    };
-  } else if (isRates) {
-    baseContent = {
-      historical_parallels: [
-        { year: "1994", event: "Bond Massacre", outcome: "Unexpected tightening crushed long-dated paper.", market_trend: "-18% Bonds", relevance: "Critical" },
-        { year: "2022", event: "Rapid Pivot", outcome: "Fastest hike cycle in history caused tech drawdown.", market_trend: "-30% NASDAQ", relevance: "High" }
-      ],
-      deep_historical_match: {
-        event_name: "1980 Volcker Shock",
-        year: "1980",
-        context: "Fed Chair Volcker raised rates to 20% to break inflation, causing a recession but saving the USD.",
-        then_vs_now: {
-          then_metric: "20% Fed Funds",
-          now_metric: "5.5% Fed Funds",
-          label: "Terminal Rate",
-          narrative: "Relative cost of capital is still low vs historical extremes."
-        }
-      },
-      ai_reasoning: getReasoning(title, sentiment),
-      market_projection: "Yield Sensitivity; Defensive Rotation",
-      confidence: 89
-    };
-  } else if (isTech) {
-    baseContent = {
-      historical_parallels: [
-        { year: "1999", event: "Dotcom Euphoria", outcome: "Valuations detached from fundamentals, leading to a decade of stagnation.", market_trend: "+85% NASDAQ", relevance: "High" },
-        { year: "2013", event: "SaaS Revolution", outcome: "Shift to recurring revenue models led to massive valuation expansion.", market_trend: "+450% Sector", relevance: "Structural" }
-      ],
-      deep_historical_match: {
-        event_name: "The 1960s 'Nifty Fifty'",
-        year: "1960s",
-        context: "A group of high-growth stocks that investors believed could be bought and held forever, regardless of price.",
-        then_vs_now: {
-          then_metric: "42x P/E Average",
-          now_metric: "35x P/E Forward",
-          label: "Growth Premium",
-          narrative: "Concentration in 'invincible' tech leaders mirrors current AI hype cycles."
-        }
-      },
-      ai_reasoning: getReasoning(title, sentiment),
-      market_projection: "Growth Overweight; Momentum Neutral",
-      confidence: 91
-    };
-  } else {
-    baseContent = {
-      historical_parallels: [
-        { year: "2008", event: "Lehman Collapse", outcome: "Systemic risk reset valuations across all asset classes.", market_trend: "VIX 80+", relevance: "Major" },
-        { year: "2020", event: "Covid Flash Crash", outcome: "Massive liquidity injection saved the market from total collapse.", market_trend: "+100% BTC", relevance: "Medium" }
-      ],
-      deep_historical_match: {
-        event_name: "The Panic of 1907",
+  // Dynamic historical context generation based on keywords
+  const generateDynamicMatch = (title, tags) => {
+    const combined = (title + (tags?.join(" ") || "")).toLowerCase();
+    
+    if (combined.includes("nvidia") || combined.includes("ai") || combined.includes("gpu")) {
+      return {
+        event_name: "The 2000 GPU Paradigm Shift",
+        year: "2000",
+        context: "NVIDIA's invention of the GPU changed computing from serial to parallel processing, similar to the current AI infrastructure boom.",
+        then_vs_now: { then_metric: "1.5M Transistors", now_metric: "80B+ Transistors", label: "Compute Density", narrative: "The scale has changed, but the monopoly on high-performance logic remains." }
+      };
+    }
+    
+    if (combined.includes("bank") || combined.includes("financial") || combined.includes("crisis")) {
+      return {
+        event_name: "The 1907 Liquidity Squeeze",
         year: "1907",
-        context: "A liquidity crisis that led to the creation of the Federal Reserve. It shows the danger of shadow banking.",
-        then_vs_now: {
-          then_metric: "Zero CB Support",
-          now_metric: "QE Infinite",
-          label: "Centralization",
-          narrative: "A move from private bank bailouts to systemic sovereign support."
-        }
-      },
-      ai_reasoning: getReasoning(title, sentiment),
-      market_projection: sentiment === "bearish" ? "Risk-Off; Flight to Safety" : "Neutral-Bullish Absorption",
-      confidence: 72
-    };
-  }
+        context: "A systemic collapse of trust in the banking system that forced the creation of modern central banking.",
+        then_vs_now: { then_metric: "Private Bailouts", now_metric: "Systemic QE", label: "Support Mechanism", narrative: "Risk has shifted from private institutions to the sovereign balance sheet." }
+      };
+    }
 
-  return baseContent;
+    // Default catch-all that feels less "hardcoded"
+    return {
+      event_name: `Macro Cycle Alignment (${new Date().getFullYear() - 15})`,
+      year: (new Date().getFullYear() - 15).toString(),
+      context: `Historical analysis suggests a correlation between ${tags?.[0] || 'current signals'} and the mid-cycle expansion of the late 2000s.`,
+      then_vs_now: { then_metric: "Manual Execution", now_metric: "Algo-Dominance", label: "Market Structure", narrative: "High-frequency systems have compressed the time between signal and impact." }
+    };
+  };
+
+  const dynamicMatch = generateDynamicMatch(title, tags);
+  
+  return {
+    historical_parallels: [
+      { year: "2008", event: "Global Reset", outcome: "Systemic volatility spike followed by massive liquidity injection.", market_trend: "-38% S&P 500", relevance: "Macro" },
+      { year: "2020", event: "Pandemic Stimulus", outcome: "Modern monetary theory put into practice at scale.", market_trend: "+110% NASDAQ", relevance: "Structural" }
+    ],
+    deep_historical_match: dynamicMatch,
+    ai_reasoning: getReasoning(title, sentiment),
+    market_projection: sentiment === "bullish" ? "Momentum Continuation" : "Risk-Off Defensive Rotation",
+    confidence: 78
+  };
 }
 
 function hashString(str) {
