@@ -1,111 +1,78 @@
 import { NextResponse } from "next/server";
+import { fetchBatchQuotes } from "@/lib/stockService";
 
-// Symbol map using Yahoo Finance symbols (more reliable, no API key needed)
+// Symbol map using Yahoo Finance symbols
 const TICKER_MAP = [
   { symbol: "GC=F",     display: "GOLD",    name: "Gold Futures"        },
   { symbol: "^GSPC",    display: "S&P 500", name: "S&P 500"             },
   { symbol: "BTC-USD",  display: "BTC",     name: "Bitcoin"             },
   { symbol: "ETH-USD",  display: "ETH",     name: "Ethereum"            },
   { symbol: "^DJI",     display: "DOW",     name: "Dow Jones"           },
-  { symbol: "^IXIC",    display: "NASDAQ",  name: "Nasdaq Composite"     },
-  { symbol: "CL=F",     display: "OIL",     name: "Crude Oil WTI"        },
-  { symbol: "DX=F",     display: "DXY",     name: "Dollar Index"         },
-  { symbol: "SI=F",     display: "SILVER",  name: "Silver Futures"        },
-  { symbol: "AAPL",     display: "AAPL",    name: "Apple Inc."           },
-  { symbol: "NVDA",     display: "NVDA",    name: "NVIDIA Corp."         },
-  { symbol: "TSLA",     display: "TSLA",    name: "Tesla Inc."           },
-  { symbol: "MSFT",     display: "MSFT",    name: "Microsoft"            },
-  { symbol: "AMZN",     display: "AMZN",    name: "Amazon"               },
-  { symbol: "META",     display: "META",    name: "Meta Platforms"       },
-  { symbol: "GOOGL",    display: "GOOGL",   name: "Alphabet"             },
-  { symbol: "XRP-USD",  display: "XRP",     name: "Ripple"               },
-  { symbol: "SOL-USD",  display: "SOL",     name: "Solana"               },
-  { symbol: "^VIX",     display: "VIX",     name: "Volatility Index"      },
-  { symbol: "EURUSD=X", display: "EUR/USD", name: "Euro Dollar"          },
+  { symbol: "^IXIC",    display: "NASDAQ",  name: "Nasdaq Composite"   },
+  { symbol: "CL=F",     display: "OIL",     name: "Crude Oil WTI"       },
+  { symbol: "DX=F",     display: "DXY",     name: "Dollar Index"        },
+  { symbol: "SI=F",     display: "SILVER",  name: "Silver Futures"      },
+  { symbol: "AAPL",     display: "AAPL",    name: "Apple Inc."          },
+  { symbol: "NVDA",     display: "NVDA",    name: "NVIDIA Corp."        },
+  { symbol: "TSLA",     display: "TSLA",    name: "Tesla Inc."          },
+  { symbol: "MSFT",     display: "MSFT",    name: "Microsoft"           },
+  { symbol: "AMZN",     display: "AMZN",    name: "Amazon"              },
+  { symbol: "META",     display: "META",    name: "Meta Platforms"      },
+  { symbol: "GOOGL",    display: "GOOGL",   name: "Alphabet"            },
+  { symbol: "XRP-USD",  display: "XRP",     name: "Ripple"              },
+  { symbol: "SOL-USD",  display: "SOL",     name: "Solana"              },
+  { symbol: "^VIX",     display: "VIX",     name: "Volatility Index"    },
+  { symbol: "EURUSD=X", display: "EUR/USD", name: "Euro Dollar"         },
 ];
 
-// Cache
 let priceCache = {};
 let cacheTimestamp = 0;
 const CACHE_TTL = 15_000;
 
-async function fetchYahooQuote(symbol) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`;
-
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    },
-    cache: "no-store",
+function buildResponse() {
+  return TICKER_MAP.map((t) => {
+    const cached = priceCache[t.symbol];
+    return {
+      symbol: t.symbol,
+      display: t.display,
+      name: t.name,
+      price: cached?.price ?? null,
+      change: cached?.change ?? 0,
+      changePercent: cached?.changePercent ?? 0,
+      error: cached?.error ?? (!cached?.price),
+    };
   });
-
-  if (!res.ok) throw new Error(`Yahoo ${res.status} for ${symbol}`);
-
-  const data = await res.json();
-  const quote = data.chart?.result?.[0];
-
-  if (!quote || !quote.meta) {
-    throw new Error(`No data for ${symbol}`);
-  }
-
-  const meta = quote.meta;
-  const currentPrice = meta.regularMarketPrice || quote.indicators?.quote?.[0]?.close?.slice(-1)[0];
-
-  if (!currentPrice) {
-    throw new Error(`No price for ${symbol}`);
-  }
-
-  const previousClose = meta.chartPreviousClose || meta.previousClose || currentPrice;
-  const change = currentPrice - previousClose;
-  const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
-
-  return {
-    price: currentPrice,
-    change: change,
-    changePercent: changePercent,
-  };
 }
 
 export async function GET() {
   const now = Date.now();
 
-  // Return cache if fresh
+  // Return cache if still within TTL
   if (Object.keys(priceCache).length > 0 && now - cacheTimestamp < CACHE_TTL) {
-    const data = buildResponse();
-    return NextResponse.json({ success: true, data, cached: true });
+    return NextResponse.json({ success: true, data: buildResponse(), cached: true });
   }
 
-  // Fetch all symbols in parallel
-  const results = await Promise.allSettled(
-    TICKER_MAP.map(async (t) => {
-      const quote = await fetchYahooQuote(t.symbol);
-      return { symbol: t.symbol, ...quote };
-    })
-  );
+  try {
+    const batchResults = await fetchBatchQuotes(TICKER_MAP, 6);
 
-  // Merge results
-  results.forEach((result, idx) => {
-    const t = TICKER_MAP[idx];
-    if (result.status === "fulfilled") {
-      priceCache[t.symbol] = { ...result.value, error: false };
-    } else {
-      console.warn(`[stocks] ${t.symbol}: ${result.reason?.message}`);
-      if (!priceCache[t.symbol]) {
-        priceCache[t.symbol] = { price: null, change: 0, changePercent: 0, error: true };
+    // Merge new quotes while preserving last known good prices for failed items
+    for (const t of TICKER_MAP) {
+      const result = batchResults[t.symbol];
+      if (result && !result.error && typeof result.price === "number") {
+        priceCache[t.symbol] = result;
+      } else if (!priceCache[t.symbol]) {
+        priceCache[t.symbol] = result || { price: null, change: 0, changePercent: 0, error: true };
       }
     }
-  });
 
-  cacheTimestamp = now;
-  const data = buildResponse();
-  return NextResponse.json({ success: true, data });
-}
-
-function buildResponse() {
-  return TICKER_MAP.map((t) => ({
-    symbol: t.symbol,
-    display: t.display,
-    name: t.name,
-    ...(priceCache[t.symbol] || { price: null, change: 0, changePercent: 0, error: true }),
-  }));
+    cacheTimestamp = now;
+    return NextResponse.json({ success: true, data: buildResponse() });
+  } catch (err) {
+    console.error("[stocks API error]:", err?.message || err);
+    // Return stale cache if available
+    if (Object.keys(priceCache).length > 0) {
+      return NextResponse.json({ success: true, data: buildResponse(), stale: true });
+    }
+    return NextResponse.json({ success: false, data: buildResponse(), error: err.message }, { status: 500 });
+  }
 }
