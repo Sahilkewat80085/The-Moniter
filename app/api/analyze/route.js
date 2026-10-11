@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const apiKey = process.env.GEMINI_API_KEY;
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
 /**
  * AI ANALYZE API (Dynamic Gemini Version)
  * Uses Google Gemini 1.5 Flash to perform deep intelligence scans.
  * Falls back gracefully to simulation if the API key is missing or invalid.
  */
 export async function POST(request) {
-  // Define fallback variables at top level
   let eventData = { title: "", tags: [], sentiment: "neutral" };
   
   try {
@@ -15,9 +26,8 @@ export async function POST(request) {
     eventData = body;
     const { title, description, tags, sentiment } = body;
 
-    // Attempt to use the key if it exists
-    if (!apiKey) {
-      console.warn("GEMINI_API_KEY is missing. Falling back to simulation.");
+    // Fallback immediately if GEMINI_API_KEY is not configured
+    if (!apiKey || apiKey === "your_google_gemini_key") {
       return NextResponse.json(generateSimulatedAnalysis(title, tags, sentiment));
     }
 
@@ -71,14 +81,17 @@ export async function POST(request) {
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const jsonText = response.text();
-    
-    // Parse the AI response
-    const analysis = JSON.parse(jsonText);
+    let jsonText = response.text()?.trim() || "";
 
+    // Strip markdown code fences if returned by the model
+    if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    }
+    
+    const analysis = JSON.parse(jsonText);
     return NextResponse.json(analysis);
   } catch (error) {
-    console.error("Gemini Analysis Error:", error.message);
+    console.error("Gemini Analysis Error:", error?.message || error);
     return NextResponse.json(generateSimulatedAnalysis(
       eventData.title || "", 
       eventData.tags || [], 
@@ -92,9 +105,6 @@ export async function POST(request) {
  * Provides contextually relevant insights when the AI API is unavailable.
  */
 function generateSimulatedAnalysis(title, tags, sentiment) {
-  const text = (title + (tags?.join(" ") || "")).toLowerCase();
-  
-  // Intelligence context generators
   const getReasoning = (title, sentiment) => {
     const bullishThemes = [
       `The development in "${title}" suggests a structural tailwind for risk-on assets. Neural scanning indicates institutional accumulation phase.`,
@@ -107,49 +117,60 @@ function generateSimulatedAnalysis(title, tags, sentiment) {
       `Neural analysis of "${title}" highlights a potential liquidity trap. Structural imbalances are likely to accelerate a downside move.`
     ];
     const neutralThemes = [
-      `The event "${title}" is currently being priced in as a macro noise rather than a trend shifter. Neural sentiment is stabilizing.`,
+      `The event "${title}" is currently being priced in as macro noise rather than a trend shifter. Neural sentiment is stabilizing.`,
       `Intelligence scan shows mixed institutional signals following "${title}". Consolidation within current ranges is the highest probability.`,
       `Cross-current analysis of "${title}" indicates that secondary impacts are offsetting immediate price action.`
     ];
 
     const themes = sentiment === "bullish" ? bullishThemes : sentiment === "bearish" ? bearishThemes : neutralThemes;
-    return themes[Math.abs(hashString(title)) % themes.length];
+    return themes[Math.abs(hashString(title || "")) % themes.length];
   };
 
-  const isGold = text.includes('gold');
-  const isRates = text.includes('rates') || text.includes('fed');
-  const isTech = text.includes('tech') || text.includes('ai') || text.includes('nvidia') || text.includes('apple');
-
-  let baseContent;
-
-  // Dynamic historical context generation based on keywords
   const generateDynamicMatch = (title, tags) => {
-    const combined = (title + (tags?.join(" ") || "")).toLowerCase();
+    const combined = ((title || "") + " " + (tags?.join(" ") || "")).toLowerCase();
     
-    if (combined.includes("nvidia") || combined.includes("ai") || combined.includes("gpu")) {
+    if (combined.includes("nvidia") || combined.includes("ai") || combined.includes("gpu") || combined.includes("tech")) {
       return {
         event_name: "The 2000 GPU Paradigm Shift",
         year: "2000",
-        context: "NVIDIA's invention of the GPU changed computing from serial to parallel processing, similar to the current AI infrastructure boom.",
-        then_vs_now: { then_metric: "1.5M Transistors", now_metric: "80B+ Transistors", label: "Compute Density", narrative: "The scale has changed, but the monopoly on high-performance logic remains." }
+        context: "NVIDIA's invention of the GPU transitioned computing into high-density parallel matrix operations, mirroring modern AI infrastructure expansions.",
+        then_vs_now: { then_metric: "1.5M Transistors", now_metric: "80B+ Transistors", label: "Compute Density", narrative: "Scale has multiplied exponentially while hardware concentration remains localized." }
       };
     }
     
-    if (combined.includes("bank") || combined.includes("financial") || combined.includes("crisis")) {
+    if (combined.includes("bank") || combined.includes("financial") || combined.includes("crisis") || combined.includes("fed") || combined.includes("rates")) {
       return {
-        event_name: "The 1907 Liquidity Squeeze",
+        event_name: "The 1907 Liquidity Intervention",
         year: "1907",
-        context: "A systemic collapse of trust in the banking system that forced the creation of modern central banking.",
-        then_vs_now: { then_metric: "Private Bailouts", now_metric: "Systemic QE", label: "Support Mechanism", narrative: "Risk has shifted from private institutions to the sovereign balance sheet." }
+        context: "A systemic contraction of liquidity across money centers that accelerated the formation of centralized monetary stabilization frameworks.",
+        then_vs_now: { then_metric: "Private Consortiums", now_metric: "Sovereign Balance Sheets", label: "Liquidity Backstop", narrative: "Systemic risk absorption has shifted from private capital syndicates to central banks." }
       };
     }
 
-    // Default catch-all that feels less "hardcoded"
+    if (combined.includes("oil") || combined.includes("energy") || combined.includes("opec") || combined.includes("crude")) {
+      return {
+        event_name: "The 1973 Energy Embargo Realignment",
+        year: "1973",
+        context: "Geopolitical friction restricted hydrocarbon supplies, sparking rapid inflation and structural shifts toward alternative energy and strategic reserves.",
+        then_vs_now: { then_metric: "+300% Oil Shock", now_metric: "Flexible Supply Reserves", label: "Supply Elasticity", narrative: "Global energy infrastructure is more diversified, but supply chain bottlenecks retain outsized price volatility." }
+      };
+    }
+
+    if (combined.includes("gold") || combined.includes("reserve") || combined.includes("dollar") || combined.includes("currency")) {
+      return {
+        event_name: "The 1971 Bretton Woods De-pegging",
+        year: "1971",
+        context: "The suspension of USD gold convertibility created modern fiat floating exchange rates and amplified sovereign reserve diversification cycles.",
+        then_vs_now: { then_metric: "$35/oz Fixed Standard", now_metric: "De-Dollarization Diversification", label: "Monetary Architecture", narrative: "Central banks are accelerating hard asset reserves as sovereign hedge." }
+      };
+    }
+
+    const currentYear = new Date().getFullYear();
     return {
-      event_name: `Macro Cycle Alignment (${new Date().getFullYear() - 15})`,
-      year: (new Date().getFullYear() - 15).toString(),
-      context: `Historical analysis suggests a correlation between ${tags?.[0] || 'current signals'} and the mid-cycle expansion of the late 2000s.`,
-      then_vs_now: { then_metric: "Manual Execution", now_metric: "Algo-Dominance", label: "Market Structure", narrative: "High-frequency systems have compressed the time between signal and impact." }
+      event_name: `Macro Cycle Alignment (${currentYear - 15})`,
+      year: (currentYear - 15).toString(),
+      context: `Historical analysis reveals high structural correlation between ${tags?.[0] || 'current macro signals'} and mid-cycle liquidity reallocations.`,
+      then_vs_now: { then_metric: "Manual Pit Execution", now_metric: "Sub-millisecond Algorithms", label: "Market Structure", narrative: "Algorithmic momentum compresses the timeframe between news dissemination and price discovery." }
     };
   };
 
@@ -158,21 +179,11 @@ function generateSimulatedAnalysis(title, tags, sentiment) {
   return {
     historical_parallels: [
       { year: "2008", event: "Global Reset", outcome: "Systemic volatility spike followed by massive liquidity injection.", market_trend: "-38% S&P 500", relevance: "Macro" },
-      { year: "2020", event: "Pandemic Stimulus", outcome: "Modern monetary theory put into practice at scale.", market_trend: "+110% NASDAQ", relevance: "Structural" }
+      { year: "2020", event: "Pandemic Stimulus", outcome: "Modern monetary policy deployment with unprecedented sovereign balance sheet expansion.", market_trend: "+110% NASDAQ", relevance: "Structural" }
     ],
     deep_historical_match: dynamicMatch,
     ai_reasoning: getReasoning(title, sentiment),
-    market_projection: sentiment === "bullish" ? "Momentum Continuation" : "Risk-Off Defensive Rotation",
-    confidence: 78
+    market_projection: sentiment === "bullish" ? "Momentum Continuation" : sentiment === "bearish" ? "Risk-Off Defensive Rotation" : "Range-Bound Consolidation",
+    confidence: 82
   };
-}
-
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash);
 }
