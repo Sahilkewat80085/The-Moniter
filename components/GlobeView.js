@@ -179,6 +179,12 @@ function EarthSphere({ performanceMode }) {
     return texture;
   }, [isHighPerf]);
 
+  useEffect(() => {
+    return () => {
+      dotTexture.dispose();
+    };
+  }, [dotTexture]);
+
   useFrame((state) => {
     if (!isHighPerf && glowRef.current?.material) {
       glowRef.current.material.opacity = 0.12 + Math.sin(state.clock.elapsedTime * 0.5) * 0.03;
@@ -255,26 +261,14 @@ function isApproxLand(lat, lon) {
 // COUNTRY BORDERS
 // Fetches Natural Earth 110m GeoJSON from CDN and renders every country
 // polygon outline as 3D line segments projected onto the globe surface.
-//
-// The approach:
-//  1. Fetch countries.geo.json (≈120 KB, cached by browser)
-//  2. For each polygon ring, convert [lon, lat] → Vector3 at BORDER_RADIUS
-//  3. Build a single BufferGeometry of line pairs (A→B, B→C, …) per ring
-//  4. Render as <lineSegments> — one draw call for all borders
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BORDER_RADIUS = GLOBE_RADIUS + 0.004; // Sits just above the sphere surface
-// Use a CDN-hosted simplified world GeoJSON (Natural Earth 110m resolution)
 const GEOJSON_URLS = [
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json",
   "https://unpkg.com/world-atlas@2.0.2/countries-110m.json",
 ];
 
-/**
- * Convert a GeoJSON polygon ring (array of [lon, lat] pairs) into
- * a flat Float32Array of line-segment vertex pairs suitable for
- * THREE.LineSegments (every two points = one segment).
- */
 function ringToLineSegments(ring, radius) {
   const verts = [];
   for (let i = 0; i < ring.length - 1; i++) {
@@ -287,10 +281,6 @@ function ringToLineSegments(ring, radius) {
   return verts;
 }
 
-/**
- * Recursively extract all rings from a GeoJSON geometry.
- * Handles Polygon, MultiPolygon, and nested arrays.
- */
 function extractRings(geometry) {
   const rings = [];
   if (geometry.type === "Polygon") {
@@ -302,16 +292,8 @@ function extractRings(geometry) {
   return rings;
 }
 
-/**
- * Build THREE geometry from TopoJSON-converted features.
- * world-atlas CDN returns TopoJSON — we convert the arcs manually.
- * Each arc is an array of [dx, dy] delta-encoded coordinates in tile space.
- */
 function buildGeometryFromTopojson(topo) {
   const allVerts = [];
-
-  // TopoJSON to raw coordinates
-  // The transform scales integer arc coords to geographic lon/lat
   const { scale, translate } = topo.transform;
   const decode = (arc) => {
     let x = 0, y = 0;
@@ -322,27 +304,21 @@ function buildGeometryFromTopojson(topo) {
     });
   };
 
-  // Decode all arcs up front
   const decodedArcs = topo.arcs.map(decode);
-
-  // Countries object in this TopoJSON
   const countries = topo.objects.countries;
   if (!countries || !countries.geometries) return null;
 
   for (const geom of countries.geometries) {
-    // Collect all arc index sequences for this geometry
     let arcGroups = [];
     if (geom.type === "Polygon") arcGroups = geom.arcs;
     else if (geom.type === "MultiPolygon") arcGroups = geom.arcs.flat();
 
     for (const arcIdxList of arcGroups) {
-      // Stitch arc segments together into a ring of [lon, lat] points
       const ring = [];
       for (const idx of arcIdxList) {
         const arc = idx < 0 ? [...decodedArcs[~idx]].reverse() : decodedArcs[idx];
         ring.push(...arc);
       }
-      // Now treat ring as [[lon, lat], ...] pairs and build line segments
       const segs = ringToLineSegments(ring, BORDER_RADIUS);
       for (const v of segs) allVerts.push(v);
     }
@@ -360,11 +336,16 @@ function CountryBorders({ enabled }) {
   const groupRef = useRef();
 
   useEffect(() => {
+    return () => {
+      if (geometry) geometry.dispose();
+    };
+  }, [geometry]);
+
+  useEffect(() => {
     if (!enabled) return;
 
     let cancelled = false;
 
-    // Try CDN URLs in order until one succeeds
     const tryFetch = (urls, index = 0) => {
       if (index >= urls.length || cancelled) return;
       fetch(urls[index])
@@ -372,12 +353,9 @@ function CountryBorders({ enabled }) {
         .then((data) => {
           if (cancelled) return;
           let geo = null;
-          // world-atlas returns TopoJSON
           if (data.type === "Topology" && data.objects?.countries) {
             geo = buildGeometryFromTopojson(data);
-          }
-          // Fallback: plain GeoJSON FeatureCollection
-          else if (data.type === "FeatureCollection" && data.features) {
+          } else if (data.type === "FeatureCollection" && data.features) {
             const allVerts = [];
             for (const feature of data.features) {
               if (!feature.geometry) continue;
@@ -421,71 +399,7 @@ function CountryBorders({ enabled }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INSTANCED MARKERS LAYER
-// GPU-accelerated marker system. Uses InstancedMesh to draw ALL pins
-// in two draw calls, with custom shaders for pulsing animations.
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Core Dot Shader
- * Ensures coloring works correctly on all GPUs and adds a subtle glow.
- */
-const MarkerShader = {
-  uniforms: {},
-  vertex: `
-    attribute vec3 instanceColor;
-    varying vec3 vColor;
-    void main() {
-      vColor = instanceColor;
-      // standard instancing matrix multiplication
-      vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
-      gl_Position = projectionMatrix * mvPosition;
-    }
-  `,
-  fragment: `
-    varying vec3 vColor;
-    void main() {
-      // Simple circular falloff for a "light" feel
-      float d = length(gl_PointCoord - vec2(0.5));
-      float strength = 1.0 - smoothstep(0.0, 0.5, d);
-      gl_FragColor = vec4(vColor, 1.0);
-    }
-  `
-};
-
-/**
- * Pulse Shader
- */
-const PulseShader = {
-  uniforms: {
-    uTime: { value: 0 },
-  },
-  vertex: `
-    attribute vec3 instanceColor;
-    varying vec3 vColor;
-    varying float vOpacity;
-    uniform float uTime;
-
-    void main() {
-      vColor = instanceColor;
-      // Pulse animation logic moved to vertex shader for performance
-      float phase = mod(uTime * 1.5, 1.0);
-      vOpacity = (1.0 - phase) * 0.5;
-      
-      // Scaling
-      float scale = 1.0 + phase * 2.0;
-      vec3 pos = position * scale;
-      
-      gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
-    }
-  `,
-  fragment: `
-    varying vec3 vColor;
-    varying float vOpacity;
-    void main() {
-      gl_FragColor = vec4(vColor, vOpacity);
-    }
-  `
-};
 
 function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHoverEvent, performanceMode }) {
   const meshRef = useRef();
@@ -493,17 +407,23 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
   const count = events.length;
   const isHighPerf = performanceMode === "high";
 
-  // Pre-calculate positions and rotations
+  useEffect(() => {
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.style.cursor = "auto";
+      }
+    };
+  }, []);
+
   const markerData = useMemo(() => {
     const data = [];
     const dummy = new THREE.Object3D();
 
-    events.forEach((event, i) => {
-      const [lat, lon] = event.coordinates;
+    events.forEach((event) => {
+      const [lat, lon] = event.coordinates || [0, 0];
       const pos = latLonToVector3(lat, lon, MARKER_RADIUS);
       const sentimentColors = sentimentToColor(event.sentiment);
       
-      // Matrix
       dummy.position.copy(pos);
       const normal = pos.clone().normalize();
       dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
@@ -542,8 +462,10 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
   }, [markerData]);
 
   useFrame((state) => {
-    if (ringRef.current && ringRef.current.material.uniforms) {
-      ringRef.current.material.uniforms.uTime.value = state.clock.elapsedTime;
+    if (ringRef.current) {
+      const t = state.clock.elapsedTime;
+      const s = 1.0 + (Math.sin(t * 3) * 0.5 + 0.5) * 0.35;
+      ringRef.current.scale.set(s, s, s);
     }
   });
 
@@ -561,13 +483,13 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
           const data = markerData[idx];
           if (data) {
             onHoverEvent({ event: data.event, screenPosition: e.point });
-            document.body.style.cursor = "pointer";
+            if (typeof document !== "undefined") document.body.style.cursor = "pointer";
           }
         }}
         onPointerOut={(e) => {
           e.stopPropagation();
           onHoverEvent(null);
-          document.body.style.cursor = "auto";
+          if (typeof document !== "undefined") document.body.style.cursor = "auto";
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -580,7 +502,7 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
         <meshBasicMaterial color="#ffffff" />
       </instancedMesh>
 
-      {/* Pulse rings — only in quality mode or simplified in high-perf */}
+      {/* Pulse rings */}
       {!isHighPerf && (
         <instancedMesh 
           key={`rings-${count}`}
@@ -588,8 +510,8 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
           args={[null, null, count]}
           frustumCulled={false}
         >
-          <ringGeometry args={[0.018, 0.022, 16]} />
-          <meshBasicMaterial transparent opacity={0.3} side={THREE.DoubleSide} color="#ffffff" />
+          <ringGeometry args={[0.018, 0.024, 16]} />
+          <meshBasicMaterial transparent opacity={0.35} side={THREE.DoubleSide} color="#ffffff" />
         </instancedMesh>
       )}
     </group>
@@ -598,7 +520,6 @@ function InstancedMarkersLayer({ events, selectedEventId, onSelectEvent, onHover
 
 /**
  * HIGH-DETAIL SELECTED MARKER
- * When an event is selected, we render it as a real mesh with extra effects.
  */
 function SelectedMarker({ event, position, colors }) {
   const beamRef = useRef();
@@ -643,53 +564,29 @@ function SelectedMarker({ event, position, colors }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCENE LIGHTING
-// Directional light (key), ambient fill, and a blue-tinted rim light.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SceneLighting() {
   return (
     <>
-      {/* Soft ambient fill — keeps the dark side visible */}
       <ambientLight intensity={0.15} color="#0d1b2e" />
-
-      {/* Key light — simulates a distant sun from top-right */}
-      <directionalLight
-        position={[5, 5, 5]}
-        intensity={0.8}
-        color="#c8dcf0"
-      />
-
-      {/* Cold fill light from opposite side */}
-      <directionalLight
-        position={[-5, -2, -5]}
-        intensity={0.15}
-        color="#1a3a5c"
-      />
-
-      {/* Blue point light for atmosphere feel */}
-      <pointLight
-        position={[0, 4, 4]}
-        intensity={0.4}
-        color="#3b82f6"
-        distance={12}
-        decay={2}
-      />
+      <directionalLight position={[5, 5, 5]} intensity={0.8} color="#c8dcf0" />
+      <directionalLight position={[-5, -2, -5]} intensity={0.15} color="#1a3a5c" />
+      <pointLight position={[0, 4, 4]} intensity={0.4} color="#3b82f6" distance={12} decay={2} />
     </>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CAMERA RIG
-// Smooth camera animation on mount and orbital behavior.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function CameraRig() {
   const { camera } = useThree();
   const mounted = useRef(false);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!mounted.current) {
-      // Smooth intro zoom from far to normal
       camera.position.lerp(new THREE.Vector3(0, 0, 6), 0.03);
       if (camera.position.z < 6.05) mounted.current = true;
     }
@@ -699,7 +596,7 @@ function CameraRig() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GLOBE SCENE (inner 3D scene, rendered inside <Canvas>)
+// GLOBE SCENE
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent, performanceMode }) {
@@ -733,7 +630,6 @@ function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent, perf
         <EarthSphere performanceMode={performanceMode} />
         <CountryBorders enabled={!isHighPerf} />
         
-        {/* Optimized Instanced Layer for main pins */}
         <InstancedMarkersLayer
           events={events}
           selectedEventId={selectedEventId}
@@ -742,7 +638,6 @@ function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent, perf
           performanceMode={performanceMode}
         />
 
-        {/* Individual high-detail mesh for the selection */}
         {selectedEvent && selectedMarkerPos && (
           <SelectedMarker
             event={selectedEvent}
@@ -768,7 +663,7 @@ function GlobeScene({ events, selectedEventId, onSelectEvent, onHoverEvent, perf
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GLOBE TOOLTIP (rendered as HTML overlay, not in 3D canvas)
+// GLOBE TOOLTIP
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GlobeTooltip({ hoveredEvent, mousePos }) {
@@ -783,13 +678,15 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
     neutral: "NEUTRAL",
   }[event.sentiment] || "UNKNOWN";
 
+  const isRightSide = typeof window !== "undefined" && mousePos.x > window.innerWidth * 0.65;
+
   return (
     <div
       className="pointer-events-none fixed z-50 max-w-xs"
       style={{
         left: mousePos.x + 16,
         top: mousePos.y - 8,
-        transform: mousePos.x > window.innerWidth * 0.65 ? "translateX(calc(-100% - 32px))" : "none",
+        transform: isRightSide ? "translateX(calc(-100% - 32px))" : "none",
       }}
     >
       <div
@@ -799,7 +696,6 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
         }}
         className="rounded-lg p-3 min-w-[200px] bg-panel/95 backdrop-blur-xl"
       >
-        {/* Sentiment badge */}
         <div className="flex items-center justify-between mb-2">
           <span
             className="text-[9px] font-black tracking-[0.2em] uppercase px-2 py-0.5 rounded"
@@ -811,36 +707,33 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
           >
             {sentimentLabel}
           </span>
-          <span className="text-[9px] font-mono text-slate-500">{event.region}</span>
+          <span className="text-[9px] font-mono text-slate-400">{event.region}</span>
         </div>
 
-        {/* Headline */}
         <p className="text-[11px] font-semibold text-foreground leading-snug mb-2">
           {event.title}
         </p>
 
-        {/* Source & timestamp */}
         <div className="flex items-center justify-between">
           {event.source && (
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
               {event.source}
             </span>
           )}
           {event.timestamp && (
-            <span className="text-[9px] font-mono text-slate-600">{event.timestamp}</span>
+            <span className="text-[9px] font-mono text-slate-500">{event.timestamp}</span>
           )}
         </div>
 
-        {/* Impact score bar */}
         {event.impactScore && (
           <div className="mt-2 pt-2 border-t border-white/5">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[8px] uppercase tracking-widest text-slate-600">Impact</span>
+              <span className="text-[8px] uppercase tracking-widest text-slate-500">Impact</span>
               <span className="text-[9px] font-mono" style={{ color: colors.core }}>
                 {event.impactScore}/100
               </span>
             </div>
-            <div className="h-0.5 w-full bg-white/5 rounded-full">
+            <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -853,8 +746,7 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
           </div>
         )}
 
-        {/* Click hint */}
-        <div className="mt-2 text-[8px] text-slate-600 font-mono tracking-widest">
+        <div className="mt-2 text-[8px] text-slate-500 font-mono tracking-widest">
           CLICK TO ANALYZE →
         </div>
       </div>
@@ -866,14 +758,23 @@ function GlobeTooltip({ hoveredEvent, mousePos }) {
 // LEGEND
 // ─────────────────────────────────────────────────────────────────────────────
 
-function GlobeLegend({ events }) {
-  const bullish = events.filter(e => e.sentiment === "bullish").length;
-  const bearish = events.filter(e => e.sentiment === "bearish").length;
-  const neutral = events.filter(e => e.sentiment === "neutral").length;
+function GlobeLegend({ events = [] }) {
+  const { bullish, bearish, neutral } = useMemo(() => {
+    let b = 0;
+    let br = 0;
+    let n = 0;
+    for (let i = 0; i < events.length; i++) {
+      const s = events[i].sentiment;
+      if (s === "bullish") b++;
+      else if (s === "bearish") br++;
+      else if (s === "neutral") n++;
+    }
+    return { bullish: b, bearish: br, neutral: n };
+  }, [events]);
 
   return (
-    <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5">
-      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600 mb-1">
+    <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 select-none pointer-events-none">
+      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">
         Signal Legend
       </div>
       {[
@@ -889,7 +790,7 @@ function GlobeLegend({ events }) {
               boxShadow: `0 0 6px ${color}`,
             }}
           />
-          <span className="text-[9px] font-mono text-slate-500">
+          <span className="text-[9px] font-mono text-slate-400">
             {label} <span style={{ color }} className="font-bold">{count}</span>
           </span>
         </div>
